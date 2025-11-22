@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  overflow: hidden;
+  background: white;
+  touch-action: manipulation;
+}
+
+/* Safe area support for mobile devices */
+.safe-area-bottom {
+  padding-bottom: max(2.5rem, env(safe-area-inset-bottom));
+}
+
+/* Better button touch targets for mobile */
+button {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: manipulation;
+}
+
