@@ -1,4 +1,4 @@
-//Restrict email to only .edu addresses
+--Restrict email to only .edu addresses
 
 CREATE OR REPLACE FUNCTION check_edu_email()
 RETURNS trigger AS $$
@@ -10,7 +10,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-//Validate edu email on sign up
+--Validate edu email on sign up
 CREATE TRIGGER validate_edu_email_on_signup
   BEFORE INSERT ON auth.users
   FOR EACH ROW
