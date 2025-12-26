@@ -8,15 +8,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import PhoneVerificationModal from './PhoneVerificationModal'
 import ProfileSetupForm from './ProfileSetupForm'
-import { mockCreateUserProfile } from '@/lib/mocks/userFunctions'
+import { createProfile } from '@/app/actions/profile'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 
 export default function AuthModal({ isOpen, onClose, mode = 'login' }) {
+  const router = useRouter()
+  
   // Local state for form inputs and UI feedback
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -71,9 +74,12 @@ export default function AuthModal({ isOpen, onClose, mode = 'login' }) {
       fetch('http://127.0.0.1:7242/ingest/3bf1bc05-78e8-4bdd-bb3f-5c49e2efc81a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthModal.js:66',message:'Before auth call',data:{isLogin,mode,email},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
       // #endregion
       
+      // Capture current page path to return user after email verification
+      const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/'
+      
       const result = isLogin
         ? await signIn(email, password)
-        : await signUp(email, password)
+        : await signUp(email, password, currentPath)
       
       // #region agent log
       fetch('http://127.0.0.1:7242/ingest/3bf1bc05-78e8-4bdd-bb3f-5c49e2efc81a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthModal.js:73',message:'After auth call',data:{hasError:!!result.error,errorMessage:result.error?.message,errorStatus:result.error?.status,hasData:!!result.data,userEmail:result.data?.user?.email,userConfirmed:result.data?.user?.email_confirmed_at,userID:result.data?.user?.id,fullResult:JSON.stringify(result)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
@@ -95,8 +101,10 @@ export default function AuthModal({ isOpen, onClose, mode = 'login' }) {
           setSignupStep('profile')
         }
       } else {
-        // Login: Close modal immediately (user is now authenticated)
+        // Login: Redirect to welcome page after successful login
         onClose()
+        // Navigate to welcome page
+        router.push('/welcome')
       }
     } catch (error) {
       // Display any errors from Supabase
@@ -207,6 +215,11 @@ export default function AuthModal({ isOpen, onClose, mode = 'login' }) {
         </Card>
       </div>
     )
+  }
+
+  // Don't render modal if it's not open
+  if (!isOpen) {
+    return null
   }
 
   return (

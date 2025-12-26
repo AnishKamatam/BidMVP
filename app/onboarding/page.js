@@ -46,9 +46,13 @@ export default function OnboardingPage() {
         setProfileComplete(isComplete)
 
         if (isComplete) {
-          // Profile complete, redirect to home after brief delay
+          // Profile complete, get returnTo parameter to redirect back to original page
+          const searchParams = new URLSearchParams(window.location.search)
+          const returnTo = searchParams.get('returnTo') || '/'
+          
+          // Redirect to original page (or home) after brief delay
           setTimeout(() => {
-            router.push('/')
+            router.push(returnTo)
           }, 1000)
         }
       } catch (err) {
@@ -63,8 +67,17 @@ export default function OnboardingPage() {
 
   // Handle profile submission
   const handleProfileSubmit = async (profileData) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/3bf1bc05-78e8-4bdd-bb3f-5c49e2efc81a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onboarding/page.js:69',message:'handleProfileSubmit called',data:{userId:user?.id,userEmail:user?.email,hasName:!!profileData?.name,hasYear:!!profileData?.year,hasGender:!!profileData?.gender,hasProfilePic:!!profileData?.profile_pic,profileLoading},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
+    
     if (!user?.id) {
       setError('User not authenticated')
+      return
+    }
+
+    if (!user?.email) {
+      setError('User email not available')
       return
     }
 
@@ -72,8 +85,17 @@ export default function OnboardingPage() {
     setError(null)
 
     try {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3bf1bc05-78e8-4bdd-bb3f-5c49e2efc81a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onboarding/page.js:86',message:'Before createProfile call',data:{userId:user.id,email:user.email},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
+      
       // Create user profile using Server Action
-      const { data, error: createError } = await createProfile(user.id, profileData)
+      // Pass email from user object (available from AuthContext)
+      const { data, error: createError } = await createProfile(user.id, profileData, user.email)
+      
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3bf1bc05-78e8-4bdd-bb3f-5c49e2efc81a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onboarding/page.js:90',message:'After createProfile call',data:{userId:user.id,hasData:!!data,hasError:!!createError,errorMessage:createError?.message,errorCode:createError?.code,errorExisting:createError?.existing},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
       
       if (createError) {
         setError(createError.message || 'Failed to create profile')
@@ -83,9 +105,26 @@ export default function OnboardingPage() {
       // Profile created successfully
       setProfileComplete(true)
       
-      // Redirect to home after brief delay
+      // Get returnTo parameter from URL to redirect back to original page
+      const searchParams = new URLSearchParams(window.location.search)
+      const returnTo = searchParams.get('returnTo') || '/'
+      
+      // Clear returnTo from user metadata after successful profile creation
+      // This prevents it from being used again if user verifies email multiple times
+      try {
+        const { createClient } = await import('@/lib/supabase/client')
+        const supabase = createClient()
+        await supabase.auth.updateUser({
+          data: { returnTo: null }
+        })
+      } catch (metadataError) {
+        // Non-critical error, log but don't fail
+        console.error('Failed to clear returnTo metadata:', metadataError)
+      }
+      
+      // Redirect to original page (or home) after brief delay
       setTimeout(() => {
-        router.push('/')
+        router.push(returnTo)
       }, 1500)
     } catch (err) {
       setError(err.message || 'Failed to create profile')
@@ -161,6 +200,7 @@ export default function OnboardingPage() {
           <ProfileSetupForm
             onSubmit={handleProfileSubmit}
             loading={profileLoading}
+            userId={user?.id}
           />
         </Card>
       </div>

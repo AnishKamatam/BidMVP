@@ -35,10 +35,11 @@ export async function checkProfile(userId) {
  * Create user profile (Server Action wrapper)
  * @param {string} userId - User ID
  * @param {object} profileData - Profile data
+ * @param {string} email - User's email address (required)
  * @returns {Promise<{data: object|null, error: object|null}>}
  */
-export async function createProfile(userId, profileData) {
-  return await createUserProfile(userId, profileData)
+export async function createProfile(userId, profileData, email) {
+  return await createUserProfile(userId, profileData, email)
 }
 
 /**
