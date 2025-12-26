@@ -9,7 +9,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { mockSendPhoneVerificationCode, mockVerifyPhoneCode } from '@/lib/mocks/userFunctions'
+import { sendPhoneVerificationCode, verifyPhoneCode } from '@/lib/supabase/phone'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'

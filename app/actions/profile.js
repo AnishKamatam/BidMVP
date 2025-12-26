@@ -6,6 +6,8 @@
 
 import { uploadProfilePhoto as uploadPhoto } from '@/lib/storage/upload'
 import { checkProfileComplete, createUserProfile, updateUserProfile, getUserProfile } from '@/lib/supabase/users'
+import { getSchoolByDomain, createSchool, linkUserToSchool, getUserSchool } from '@/lib/supabase/schools'
+import { detectCampusFromEmail, autoLinkUser } from '@/lib/campus'
 import { createClient } from '@/lib/supabase/server'
 
 /**
@@ -101,5 +103,33 @@ export async function updateUserPhone(userId, phone) {
       error: { message: error.message || 'Failed to update phone number' }
     }
   }
+}
+
+/**
+ * Detect campus from email domain (Server Action wrapper)
+ * @param {string} email - Email address
+ * @returns {Promise<{domain: string|null, error: object|null}>}
+ */
+export async function detectCampus(email) {
+  return await detectCampusFromEmail(email)
+}
+
+/**
+ * Auto-link user to campus based on email (Server Action wrapper)
+ * @param {string} userId - User ID
+ * @param {string} email - User's email address
+ * @returns {Promise<{data: {school: object, linked: boolean}|null, error: object|null}>}
+ */
+export async function linkCampus(userId, email) {
+  return await autoLinkUser(userId, email)
+}
+
+/**
+ * Get user's school (Server Action wrapper)
+ * @param {string} userId - User ID
+ * @returns {Promise<{data: object|null, error: object|null}>}
+ */
+export async function getCampus(userId) {
+  return await getUserSchool(userId)
 }
 
