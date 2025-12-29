@@ -28,9 +28,17 @@ body {
 body {
   /* Prevent scrolling - we want a fixed mobile app experience */
   overflow: hidden;
-  background: white;
+  /* Design system: White background for light theme (default) */
+  background: #FFFFFF;
+  color: #000000;
   /* Improve touch responsiveness - prevents delays on mobile */
   touch-action: manipulation;
+}
+
+/* Dark theme support (optional) */
+body.dark {
+  background: #1F2937;
+  color: #FFFFFF;
 }
 
 /* Safe area support for devices with notches (iPhone X and newer)

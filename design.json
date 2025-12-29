@@ -1,0 +1,793 @@
+{
+  "designSystem": {
+    "name": "Modern Dating App Design System",
+    "version": "2.0.0",
+    "description": "A modern, mobile-first design system inspired by contemporary dating apps. Features light backgrounds, blue primary accents, gradient buttons, colorful icons, and engaging visual elements optimized for mobile experiences.",
+    
+    "designPrinciples": {
+      "engagement": "Design should be visually engaging and encourage user interaction. Use colors, gradients, and icons to create an appealing experience.",
+      "mobileFirst": "Every component is designed for mobile devices first, with touch-friendly targets and mobile-optimized spacing.",
+      "clarity": "Information hierarchy should be clear and scannable. Important actions and content should stand out.",
+      "consistency": "Reusable components maintain visual consistency across the application while allowing for contextual variations.",
+      "accessibility": "High contrast ratios, clear typography hierarchy, and touch-friendly interactive elements (minimum 44x44px).",
+      "modernity": "Contemporary design with rounded corners, smooth gradients, colorful accents, and fluid interactions."
+    },
+    
+    "themes": {
+      "light": {
+        "default": true,
+        "description": "Light theme is the default - white/light backgrounds with dark text",
+        "background": "#FFFFFF",
+        "surface": "#F9FAFB",
+        "text": "#000000"
+      },
+      "dark": {
+        "default": false,
+        "description": "Dark theme variant - dark backgrounds with light text (optional support)",
+        "background": "#1F2937",
+        "surface": "#374151",
+        "text": "#FFFFFF"
+      }
+    },
+    
+    "colorPalette": {
+      "primary": {
+        "ui": {
+          "value": "#3B82F6",
+          "description": "Blue primary UI accent - used for selected states, progress bars, verified badges, active tabs, and primary interactive elements",
+          "usage": "Selected tabs, progress bars, verified checkmarks, active states, primary buttons, links"
+        },
+        "background": {
+          "light": {
+            "value": "#FFFFFF",
+            "description": "White background for light theme - main canvas color",
+            "usage": "Primary background for pages, screens, and main content areas in light theme"
+          },
+          "dark": {
+            "value": "#1F2937",
+            "description": "Dark gray background for dark theme",
+            "usage": "Primary background for pages in dark theme"
+          }
+        }
+      },
+      "gradient": {
+        "blueToOrange": {
+          "from": "#3B82F6",
+          "to": "#F59E0B",
+          "description": "Blue to orange gradient for special action buttons and premium features",
+          "usage": "Gradient buttons for special actions (e.g., 'Add more to my gender'), premium feature highlights"
+        },
+        "blueToPurple": {
+          "from": "#3B82F6",
+          "to": "#8B5CF6",
+          "description": "Blue to purple gradient variant",
+          "usage": "Alternative gradient option for variety"
+        }
+      },
+      "gender": {
+        "woman": {
+          "value": "#EC4899",
+          "description": "Pink color for woman/female gender option",
+          "usage": "Gender selection radio buttons, gender-specific UI elements"
+        },
+        "man": {
+          "value": "#3B82F6",
+          "description": "Blue color for man/male gender option",
+          "usage": "Gender selection radio buttons, gender-specific UI elements"
+        },
+        "nonBinary": {
+          "value": "#10B981",
+          "description": "Green color for non-binary/other gender option",
+          "usage": "Gender selection radio buttons, gender-specific UI elements"
+        }
+      },
+      "premium": {
+        "blue": {
+          "value": "#3B82F6",
+          "description": "Blue for premium features (e.g., MoonitX with crown icon)",
+          "usage": "Premium feature cards, upgrade buttons, premium badges"
+        },
+        "yellow": {
+          "value": "#FBBF24",
+          "description": "Yellow/gold for premium gifts/features (e.g., Gift with diamond icon)",
+          "usage": "Gift features, special offers, premium highlights"
+        },
+        "orange": {
+          "value": "#F59E0B",
+          "description": "Orange for boost features (e.g., Boosts with rocket icon)",
+          "usage": "Boost features, promotional elements, action highlights"
+        }
+      },
+      "neutral": {
+        "white": {
+          "value": "#FFFFFF",
+          "description": "Pure white for card backgrounds and content containers",
+          "usage": "Card backgrounds, modal backgrounds, input fields, surfaces"
+        },
+        "black": {
+          "value": "#000000",
+          "description": "Pure black for primary text and high-contrast elements",
+          "usage": "Main headings, body text, important labels"
+        },
+        "gray": {
+          "light": {
+            "value": "#F3F4F6",
+            "description": "Very light gray for subtle backgrounds and dividers",
+            "usage": "Subtle backgrounds, inactive states, dividers"
+          },
+          "border": {
+            "value": "#E5E7EB",
+            "description": "Light gray for borders and separators",
+            "usage": "Card borders, input borders, dividers, disabled states"
+          },
+          "medium": {
+            "value": "#9CA3AF",
+            "description": "Medium gray for secondary text and inactive elements",
+            "usage": "Secondary text, placeholder text, inactive tabs, metadata"
+          },
+          "dark": {
+            "value": "#4B5563",
+            "description": "Dark gray for tertiary text and subtle emphasis",
+            "usage": "Descriptions, metadata, timestamps, secondary actions"
+          }
+        }
+      },
+      "semantic": {
+        "success": {
+          "value": "#10B981",
+          "description": "Green for success states and positive confirmations",
+          "usage": "Success messages, confirmation indicators, positive actions"
+        },
+        "error": {
+          "value": "#EF4444",
+          "description": "Red for errors, destructive actions, and deny buttons",
+          "usage": "Error messages, destructive actions, deny buttons, validation errors"
+        },
+        "warning": {
+          "value": "#F59E0B",
+          "description": "Orange/amber for warnings and caution states",
+          "usage": "Warning messages, caution indicators"
+        },
+        "info": {
+          "value": "#3B82F6",
+          "description": "Blue for informational messages (same as primary UI)",
+          "usage": "Info messages, informational badges, neutral actions"
+        }
+      }
+    },
+    
+    "typography": {
+      "fontFamily": {
+        "primary": "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+        "description": "Modern, clean sans-serif font family. Inter is preferred for its excellent readability and modern aesthetic on mobile devices."
+      },
+      "scale": {
+        "display": {
+          "size": "2rem",
+          "lineHeight": "1.2",
+          "weight": "700",
+          "letterSpacing": "-0.02em",
+          "usage": "Large profile names, major headings, hero text, app titles"
+        },
+        "heading1": {
+          "size": "1.5rem",
+          "lineHeight": "1.3",
+          "weight": "700",
+          "letterSpacing": "-0.01em",
+          "usage": "Page titles, card titles, section headings, form titles"
+        },
+        "heading2": {
+          "size": "1.25rem",
+          "lineHeight": "1.4",
+          "weight": "600",
+          "letterSpacing": "0",
+          "usage": "Subsection headings, card subtitles, step indicators"
+        },
+        "heading3": {
+          "size": "1.125rem",
+          "lineHeight": "1.4",
+          "weight": "600",
+          "letterSpacing": "0",
+          "usage": "Smaller headings, list item titles, feature names"
+        },
+        "body": {
+          "size": "1rem",
+          "lineHeight": "1.5",
+          "weight": "400",
+          "letterSpacing": "0",
+          "usage": "Body text, descriptions, general content, form labels"
+        },
+        "bodySmall": {
+          "size": "0.875rem",
+          "lineHeight": "1.5",
+          "weight": "400",
+          "letterSpacing": "0",
+          "usage": "Secondary text, metadata, timestamps, helper text, step numbers"
+        },
+        "caption": {
+          "size": "0.75rem",
+          "lineHeight": "1.4",
+          "weight": "400",
+          "letterSpacing": "0.01em",
+          "usage": "Labels, captions, helper text, filter tags"
+        }
+      },
+      "hierarchy": {
+        "primary": "Use display or heading1 for the most important information (e.g., user names, page titles, major headings)",
+        "secondary": "Use heading2 or heading3 for supporting information (e.g., section headers, feature names, step labels)",
+        "tertiary": "Use body or bodySmall for descriptions and general content",
+        "metadata": "Use caption or bodySmall for timestamps, labels, step numbers, and less important information"
+      }
+    },
+    
+    "spacing": {
+      "scale": {
+        "xs": "0.25rem",
+        "sm": "0.5rem",
+        "md": "1rem",
+        "lg": "1.5rem",
+        "xl": "2rem",
+        "2xl": "3rem",
+        "3xl": "4rem"
+      },
+      "guidelines": {
+        "cardPadding": "1.5rem",
+        "cardGap": "1.5rem",
+        "sectionSpacing": "2rem",
+        "elementSpacing": "1rem",
+        "tightSpacing": "0.5rem",
+        "looseSpacing": "2rem",
+        "mobilePadding": "1rem",
+        "mobileGap": "1rem"
+      },
+      "layout": {
+        "containerPadding": "1rem",
+        "gridGap": "1rem",
+        "cardInternalPadding": "1.5rem",
+        "bottomNavHeight": "3.5rem",
+        "safeAreaBottom": "max(2.5rem, env(safe-area-inset-bottom))"
+      }
+    },
+    
+    "borderRadius": {
+      "none": "0",
+      "sm": "0.25rem",
+      "md": "0.5rem",
+      "lg": "0.75rem",
+      "xl": "1rem",
+      "full": "9999px",
+      "default": "0.75rem",
+      "description": "Rounded corners are essential. Cards use 'lg' (0.75rem), buttons use 'md' (0.5rem), avatars and circular buttons use 'full', filter tags use 'full'."
+    },
+    
+    "shadows": {
+      "none": "none",
+      "sm": "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+      "md": "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+      "lg": "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+      "default": "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+      "description": "Subtle shadows for depth. Cards use 'md' shadow. Premium features may use 'lg' for emphasis."
+    },
+    
+    "components": {
+      "card": {
+        "description": "Primary container component for all content sections",
+        "styles": {
+          "backgroundColor": "#FFFFFF",
+          "borderRadius": "0.75rem",
+          "padding": "1.5rem",
+          "boxShadow": "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+          "border": "none"
+        },
+        "variants": {
+          "default": "White background with subtle shadow",
+          "elevated": "Slightly stronger shadow for emphasis",
+          "flat": "No shadow for minimal appearance",
+          "premium": "Colored background (blue, yellow, or orange) with icon, for premium features"
+        },
+        "layout": {
+          "spacing": "Maintain 1rem gap between cards on mobile, 1.5rem on larger screens",
+          "padding": "Always use 1.5rem internal padding for card content"
+        }
+      },
+      
+      "button": {
+        "description": "Interactive action elements with clear visual hierarchy",
+        "styles": {
+          "borderRadius": "0.5rem",
+          "padding": "0.5rem 1rem",
+          "fontWeight": "500",
+          "fontSize": "0.875rem",
+          "transition": "all 0.2s ease",
+          "cursor": "pointer",
+          "border": "none"
+        },
+        "variants": {
+          "primary": {
+            "backgroundColor": "#3B82F6",
+            "color": "white",
+            "description": "Blue primary button for main actions",
+            "usage": "Primary actions, confirm buttons, main CTAs"
+          },
+          "secondary": {
+            "backgroundColor": "#E5E7EB",
+            "color": "#4B5563",
+            "description": "Gray button for secondary actions",
+            "usage": "Secondary actions, cancel buttons, less important actions"
+          },
+          "gradient": {
+            "background": "linear-gradient(to right, #3B82F6, #F59E0B)",
+            "color": "white",
+            "description": "Blue to orange gradient button for special actions",
+            "usage": "Special actions (e.g., 'Add more to my gender'), premium features, highlights"
+          },
+          "text": {
+            "backgroundColor": "transparent",
+            "color": "#4B5563",
+            "description": "Text-only button for subtle actions",
+            "usage": "Edit profile, view all, subtle actions"
+          },
+          "circular": {
+            "backgroundColor": "#000000",
+            "color": "white",
+            "borderRadius": "50%",
+            "width": "3.5rem",
+            "height": "3.5rem",
+            "description": "Circular black button for navigation (e.g., next/previous arrows)",
+            "usage": "Onboarding navigation, carousel controls"
+          },
+          "ghost": {
+            "backgroundColor": "transparent",
+            "color": "#4B5563",
+            "description": "Transparent button for subtle actions",
+            "usage": "Icon buttons, subtle interactions"
+          }
+        },
+        "states": {
+          "hover": "Slightly darker shade of base color, slight scale (1.02)",
+          "active": "Even darker, with scale transform (0.98)",
+          "disabled": "Reduced opacity (0.5) and no pointer events"
+        },
+        "sizing": {
+          "small": "0.375rem 0.75rem, fontSize: 0.75rem",
+          "medium": "0.5rem 1rem, fontSize: 0.875rem",
+          "large": "0.75rem 1.5rem, fontSize: 1rem"
+        },
+        "withIcon": {
+          "description": "Buttons can include icons (left, right, or both sides)",
+          "iconSpacing": "0.5rem gap between icon and text"
+        }
+      },
+      
+      "progressIndicator": {
+        "description": "Progress indicators showing completion or steps",
+        "types": {
+          "linear": {
+            "description": "Horizontal progress bar for step indicators and completion",
+            "styles": {
+              "height": "0.5rem",
+              "backgroundColor": "#E5E7EB",
+              "fillColor": "#3B82F6",
+              "borderRadius": "9999px",
+              "transition": "all 0.3s ease"
+            },
+            "usage": "Onboarding steps (e.g., 'STEP 2 OF 8'), profile completion, loading states"
+          },
+          "circular": {
+            "description": "Circular progress ring showing percentage",
+            "styles": {
+              "type": "circular",
+              "strokeColor": "#3B82F6",
+              "strokeWidth": "8",
+              "backgroundColor": "#E5E7EB",
+              "size": "varies (typically 60-80px diameter)",
+              "textColor": "#3B82F6",
+              "textWeight": "600",
+              "textSize": "0.875rem"
+            },
+            "usage": "Profile completion percentage, task progress"
+          }
+        },
+        "stepIndicator": {
+          "description": "Text indicator showing current step (e.g., 'STEP 2 OF 8')",
+          "styles": {
+            "fontSize": "0.875rem",
+            "fontWeight": "600",
+            "color": "#9CA3AF",
+            "marginBottom": "0.5rem"
+          }
+        }
+      },
+      
+      "radioButton": {
+        "description": "Radio button with icon support for gender selection and options",
+        "styles": {
+          "display": "flex",
+          "alignItems": "center",
+          "padding": "1rem",
+          "borderRadius": "0.75rem",
+          "border": "2px solid #E5E7EB",
+          "backgroundColor": "white",
+          "cursor": "pointer",
+          "transition": "all 0.2s ease"
+        },
+        "states": {
+          "default": {
+            "borderColor": "#E5E7EB",
+            "backgroundColor": "white"
+          },
+          "selected": {
+            "borderColor": "varies by option (pink, blue, or green)",
+            "backgroundColor": "white"
+          },
+          "hover": {
+            "borderColor": "varies by option",
+            "backgroundColor": "#F9FAFB"
+          }
+        },
+        "icon": {
+          "size": "1.5rem",
+          "marginRight": "0.75rem"
+        },
+        "label": {
+          "fontSize": "1rem",
+          "fontWeight": "500",
+          "color": "#000000"
+        }
+      },
+      
+      "tab": {
+        "description": "Tab navigation component for switching between views",
+        "styles": {
+          "padding": "0.75rem 1rem",
+          "fontSize": "0.875rem",
+          "fontWeight": "600",
+          "color": "#9CA3AF",
+          "borderBottom": "2px solid transparent",
+          "cursor": "pointer",
+          "transition": "all 0.2s ease"
+        },
+        "states": {
+          "default": {
+            "color": "#9CA3AF",
+            "borderBottomColor": "transparent"
+          },
+          "active": {
+            "color": "#3B82F6",
+            "borderBottomColor": "#3B82F6"
+          }
+        }
+      },
+      
+      "filterTag": {
+        "description": "Small rounded filter buttons (e.g., 'Nearby', 'Has a Bio', 'Photo Verified')",
+        "styles": {
+          "padding": "0.375rem 0.75rem",
+          "borderRadius": "9999px",
+          "fontSize": "0.75rem",
+          "fontWeight": "500",
+          "backgroundColor": "#F3F4F6",
+          "color": "#4B5563",
+          "border": "none",
+          "cursor": "pointer",
+          "transition": "all 0.2s ease"
+        },
+        "states": {
+          "default": {
+            "backgroundColor": "#F3F4F6",
+            "color": "#4B5563"
+          },
+          "active": {
+            "backgroundColor": "#3B82F6",
+            "color": "white"
+          },
+          "hover": {
+            "backgroundColor": "#E5E7EB"
+          }
+        }
+      },
+      
+      "bottomNavigation": {
+        "description": "Fixed bottom navigation bar with icons",
+        "styles": {
+          "position": "fixed",
+          "bottom": "0",
+          "left": "0",
+          "right": "0",
+          "height": "3.5rem",
+          "backgroundColor": "#FFFFFF",
+          "borderTop": "1px solid #E5E7EB",
+          "display": "flex",
+          "justifyContent": "space-around",
+          "alignItems": "center",
+          "paddingBottom": "max(0.5rem, env(safe-area-inset-bottom))"
+        },
+        "icon": {
+          "size": "1.5rem",
+          "color": {
+            "default": "#9CA3AF",
+            "active": "#3B82F6"
+          }
+        }
+      },
+      
+      "premiumFeatureCard": {
+        "description": "Colored card for premium features (MoonitX, Gift, Boosts)",
+        "styles": {
+          "padding": "1.5rem",
+          "borderRadius": "0.75rem",
+          "display": "flex",
+          "alignItems": "center",
+          "gap": "1rem"
+        },
+        "variants": {
+          "blue": {
+            "backgroundColor": "#3B82F6",
+            "color": "white",
+            "icon": "crown",
+            "usage": "MoonitX premium subscription"
+          },
+          "yellow": {
+            "backgroundColor": "#FBBF24",
+            "color": "white",
+            "icon": "diamond",
+            "usage": "Gift features"
+          },
+          "orange": {
+            "backgroundColor": "#F59E0B",
+            "color": "white",
+            "icon": "rocket",
+            "usage": "Boost features"
+          }
+        },
+        "icon": {
+          "size": "2rem"
+        },
+        "content": {
+          "flex": "1"
+        },
+        "action": {
+          "button": "Text button with '+' or 'Upgrade' text"
+        }
+      },
+      
+      "avatar": {
+        "description": "Circular profile pictures for users",
+        "styles": {
+          "borderRadius": "50%",
+          "objectFit": "cover",
+          "border": "2px solid #FFFFFF",
+          "boxShadow": "0 2px 4px rgba(0, 0, 0, 0.1)"
+        },
+        "sizes": {
+          "xs": "1.5rem",
+          "sm": "2rem",
+          "md": "2.5rem",
+          "lg": "4rem",
+          "xl": "6rem",
+          "profile": "8rem"
+        },
+        "verified": {
+          "badge": {
+            "icon": "checkmark in circle",
+            "color": "#3B82F6",
+            "size": "1.25rem",
+            "position": "bottom-right of avatar"
+          }
+        }
+      },
+      
+      "badge": {
+        "description": "Small colored pills for labels, counts, and status indicators",
+        "styles": {
+          "borderRadius": "9999px",
+          "padding": "0.25rem 0.75rem",
+          "fontSize": "0.75rem",
+          "fontWeight": "500",
+          "display": "inline-flex",
+          "alignItems": "center"
+        },
+        "variants": {
+          "count": {
+            "backgroundColor": "#3B82F6",
+            "color": "white",
+            "usage": "Notification counts, unread indicators"
+          },
+          "tag": {
+            "backgroundColor": "#F3F4F6",
+            "color": "#4B5563",
+            "usage": "Skill tags, category labels"
+          },
+          "status": {
+            "active": "#10B981",
+            "inactive": "#9CA3AF",
+            "usage": "Status indicators"
+          }
+        }
+      },
+      
+      "input": {
+        "description": "Form input fields and text areas",
+        "styles": {
+          "borderRadius": "0.5rem",
+          "border": "1px solid #E5E7EB",
+          "padding": "0.75rem 1rem",
+          "fontSize": "1rem",
+          "transition": "all 0.2s ease",
+          "backgroundColor": "white"
+        },
+        "states": {
+          "default": {
+            "borderColor": "#E5E7EB"
+          },
+          "focus": {
+            "borderColor": "#3B82F6",
+            "outline": "none",
+            "boxShadow": "0 0 0 3px rgba(59, 130, 246, 0.1)"
+          },
+          "error": {
+            "borderColor": "#EF4444"
+          },
+          "disabled": {
+            "backgroundColor": "#F3F4F6",
+            "color": "#9CA3AF",
+            "cursor": "not-allowed"
+          }
+        }
+      },
+      
+      "toggle": {
+        "description": "Switch component for on/off states",
+        "styles": {
+          "width": "3rem",
+          "height": "1.5rem",
+          "borderRadius": "9999px",
+          "transition": "all 0.2s ease",
+          "cursor": "pointer"
+        },
+        "states": {
+          "on": {
+            "backgroundColor": "#3B82F6",
+            "thumbPosition": "right",
+            "thumbColor": "white"
+          },
+          "off": {
+            "backgroundColor": "#E5E7EB",
+            "thumbPosition": "left",
+            "thumbColor": "white"
+          }
+        },
+        "thumb": {
+          "size": "1.25rem",
+          "borderRadius": "50%",
+          "boxShadow": "0 2px 4px rgba(0, 0, 0, 0.2)"
+        }
+      }
+    },
+    
+    "layout": {
+      "mobile": {
+        "description": "Mobile-first layout system",
+        "containerPadding": "1rem",
+        "cardGap": "1rem",
+        "maxWidth": "100%"
+      },
+      "grid": {
+        "description": "Responsive grid system for card layouts",
+        "breakpoints": {
+          "mobile": {
+            "columns": "1",
+            "gap": "1rem",
+            "padding": "1rem"
+          },
+          "tablet": {
+            "columns": "2",
+            "gap": "1.5rem",
+            "padding": "1.5rem"
+          },
+          "desktop": {
+            "columns": "3",
+            "gap": "1.5rem",
+            "padding": "1.5rem"
+          }
+        }
+      },
+      "bottomNavigation": {
+        "height": "3.5rem",
+        "safeArea": "max(0.5rem, env(safe-area-inset-bottom))",
+        "description": "Fixed bottom navigation bar with safe area support"
+      }
+    },
+    
+    "interactions": {
+      "transitions": {
+        "default": "all 0.2s ease",
+        "hover": "0.15s ease",
+        "active": "0.1s ease"
+      },
+      "hover": {
+        "description": "Subtle hover effects on interactive elements",
+        "card": "Slight elevation increase (stronger shadow)",
+        "button": "Darker shade, slight scale (1.02)",
+        "avatar": "Slight scale (1.05)"
+      },
+      "active": {
+        "description": "Pressed state for buttons and interactive elements",
+        "scale": "0.98",
+        "duration": "0.1s"
+      },
+      "touch": {
+        "description": "Mobile-optimized touch interactions",
+        "tapHighlight": "transparent",
+        "userSelect": "none",
+        "touchAction": "manipulation"
+      }
+    },
+    
+    "composition": {
+      "onboarding": {
+        "structure": "Progress bar (top) → Step indicator text → Main heading → Content → Navigation buttons (bottom)",
+        "spacing": "Progress: top margin, Step indicator: 0.5rem below progress, Heading: 1rem below step, Content: 1.5rem below heading, Navigation: fixed bottom"
+      },
+      "profileCard": {
+        "structure": "Avatar (large, centered) → Name with verified badge → Description → Tags (badges) → Action buttons",
+        "spacing": "Avatar: 1rem bottom margin, Name: 0.5rem bottom margin, Tags: 1rem top margin with 0.5rem gap between"
+      },
+      "premiumFeature": {
+        "structure": "Icon (left) → Content (title + description) → Action button (right)",
+        "spacing": "Icon: 1rem right margin, Content: flex-1, Action: left margin"
+      }
+    },
+    
+    "accessibility": {
+      "contrast": {
+        "minimum": "4.5:1 for normal text, 3:1 for large text",
+        "description": "Ensure all text meets WCAG AA contrast requirements"
+      },
+      "touchTargets": {
+        "minimumSize": "44x44px",
+        "description": "All interactive elements should be at least 44x44 pixels for comfortable touch interaction"
+      },
+      "focus": {
+        "visible": "All interactive elements must have visible focus states",
+        "style": "2px solid #3B82F6 with 2px offset"
+      }
+    },
+    
+    "implementation": {
+      "guidelines": {
+        "useTailwind": "Prefer Tailwind CSS utility classes for styling. Extend tailwind.config.js with custom colors and spacing from this design system.",
+        "componentStructure": "Create reusable components for each UI element (Card, Button, Avatar, etc.) that follow these specifications.",
+        "responsiveDesign": "All components should be mobile-first and responsive using the grid breakpoints defined above.",
+        "consistency": "Always use the spacing scale, color palette, and typography scale defined here. Avoid arbitrary values.",
+        "stateManagement": "Ensure all interactive elements have hover, active, focus, and disabled states as specified.",
+        "themeSupport": "Default to light theme. Dark theme support is optional but should follow the same design principles."
+      },
+      "tailwindMapping": {
+        "colors": {
+          "primary-ui": "bg-[#3B82F6] or text-[#3B82F6]",
+          "primary-bg-light": "bg-white",
+          "primary-bg-dark": "bg-[#1F2937]",
+          "gender-woman": "bg-[#EC4899] or text-[#EC4899]",
+          "gender-man": "bg-[#3B82F6] or text-[#3B82F6]",
+          "gender-nonBinary": "bg-[#10B981] or text-[#10B981]",
+          "premium-blue": "bg-[#3B82F6]",
+          "premium-yellow": "bg-[#FBBF24]",
+          "premium-orange": "bg-[#F59E0B]",
+          "success": "bg-[#10B981]",
+          "error": "bg-[#EF4444]",
+          "gray-light": "bg-[#F3F4F6]",
+          "gray-border": "border-[#E5E7EB]",
+          "gray-medium": "text-[#9CA3AF]",
+          "gray-dark": "text-[#4B5563]"
+        },
+        "gradients": {
+          "blueToOrange": "bg-gradient-to-r from-[#3B82F6] to-[#F59E0B]",
+          "blueToPurple": "bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6]"
+        },
+        "spacing": "Use Tailwind's spacing scale (p-4 = 1rem, p-6 = 1.5rem, etc.)",
+        "borderRadius": "rounded-md (0.5rem), rounded-lg (0.75rem), rounded-full (50%)"
+      }
+    }
+  }
+}
