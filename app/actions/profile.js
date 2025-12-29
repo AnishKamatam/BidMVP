@@ -6,7 +6,7 @@
 
 import { uploadProfilePhoto as uploadPhoto } from '@/lib/storage/upload'
 import { checkProfileComplete, createUserProfile, updateUserProfile, getUserProfile } from '@/lib/supabase/users'
-import { getSchoolByDomain, createSchool, linkUserToSchool, getUserSchool } from '@/lib/supabase/schools'
+import { getSchoolByDomain, createSchool, linkUserToSchool, getUserSchool, searchSchools } from '@/lib/supabase/schools'
 import { detectCampusFromEmail, autoLinkUser } from '@/lib/campus'
 import { createClient } from '@/lib/supabase/server'
 
@@ -131,5 +131,15 @@ export async function linkCampus(userId, email) {
  */
 export async function getCampus(userId) {
   return await getUserSchool(userId)
+}
+
+/**
+ * Search schools by name or domain (Server Action wrapper)
+ * @param {string} query - Search query
+ * @param {number} limit - Maximum number of results (default: 20)
+ * @returns {Promise<{data: Array|null, error: object|null}>}
+ */
+export async function searchSchoolsAction(query, limit = 20) {
+  return await searchSchools(query, limit)
 }
 
