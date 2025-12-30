@@ -232,7 +232,7 @@ export default function CampusSelectionPage() {
       if (data?.school) {
         // Successfully linked
         const returnTo = searchParams.get('returnTo') || '/welcome'
-        router.push(returnTo)
+        router.push(`/onboarding/fraternity?returnTo=${encodeURIComponent(returnTo)}`)
       } else {
         setError('Failed to link campus')
         setLinking(false)
@@ -265,7 +265,7 @@ export default function CampusSelectionPage() {
       if (data?.success) {
         // Successfully linked
         const returnTo = searchParams.get('returnTo') || '/welcome'
-        router.push(returnTo)
+        router.push(`/onboarding/fraternity?returnTo=${encodeURIComponent(returnTo)}`)
       } else {
         setError('Failed to link campus')
         setLinking(false)
