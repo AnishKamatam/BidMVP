@@ -5,19 +5,58 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useFraternity } from '@/contexts/FraternityContext'
 import AuthModal from '@/components/AuthModal'
+import FraternityPrompt from '@/components/FraternityPrompt'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
+import { useRouter } from 'next/navigation'
 
 export default function Home() {
   // Local state to control the auth modal
   const [modalOpen, setModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState('login') // 'login' or 'signup'
+  const [promptDismissed, setPromptDismissed] = useState(false)
   
   // Get current user from auth context (for potential future use)
-  const { loading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useAuth()
+  const { userFraternities, loading: fraternityLoading } = useFraternity()
+  const router = useRouter()
+
+  // Check if prompt was dismissed in localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const dismissed = localStorage.getItem('fraternityPromptDismissed')
+      if (dismissed) {
+        const dismissedTime = parseInt(dismissed, 10)
+        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
+        // Show again after 7 days
+        if (dismissedTime > sevenDaysAgo) {
+          setPromptDismissed(true)
+        } else {
+          localStorage.removeItem('fraternityPromptDismissed')
+        }
+      }
+    }
+  }, [])
+
+  const handleDismissPrompt = () => {
+    setPromptDismissed(true)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('fraternityPromptDismissed', Date.now().toString())
+    }
+  }
+
+  const handleJoinFraternity = () => {
+    router.push('/fraternities/join?returnTo=/')
+  }
+
+  const showPrompt = user && 
+                     !promptDismissed && 
+                     !fraternityLoading && 
+                     userFraternities.length === 0
   
   // Show loading state while checking auth
   if (authLoading) {
@@ -44,6 +83,15 @@ export default function Home() {
 
   return (
     <main className="h-screen w-screen bg-white flex flex-col">
+      {/* Fraternity Prompt Banner - only for logged-in users without fraternities */}
+      {showPrompt && (
+        <FraternityPrompt
+          onJoin={handleJoinFraternity}
+          onDismiss={handleDismissPrompt}
+          variant="banner"
+        />
+      )}
+
       {/* Center area - empty for now, can add content later */}
       <div className="flex-1 flex items-center justify-center px-6">
         {/* Add any welcome content or branding here if needed */}

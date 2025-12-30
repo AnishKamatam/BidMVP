@@ -5,6 +5,7 @@
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { FraternityProvider } from '@/contexts/FraternityContext'
 
 // Configure Inter font from Google Fonts
 // The variable option creates a CSS custom property we can reference
@@ -33,7 +34,10 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${inter.variable} font-inter`}>
         {/* Wrap entire app in AuthProvider so any component can access auth state */}
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {/* Wrap in FraternityProvider so any component can access fraternity state */}
+          <FraternityProvider>{children}</FraternityProvider>
+        </AuthProvider>
       </body>
     </html>
   )
