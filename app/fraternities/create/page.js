@@ -59,29 +59,57 @@ export default function CreateFraternityPage() {
     setLoading(true)
 
     try {
+      // Validate type is present and valid
+      if (!fraternityData.type || typeof fraternityData.type !== 'string') {
+        setError('Please select a type (Fraternity, Sorority, or Other)')
+        setLoading(false)
+        return
+      }
+
       // Convert type from capitalized to lowercase for backend
-      // Map form data to backend format
+      // Handle any case variations
+      const typeLower = String(fraternityData.type).toLowerCase().trim()
+      
+      // Validate converted type matches expected values
+      const validTypes = ['fraternity', 'sorority', 'other']
+      if (!validTypes.includes(typeLower)) {
+        setError(`Invalid type: "${fraternityData.type}". Please select Fraternity, Sorority, or Other.`)
+        setLoading(false)
+        return
+      }
+
       const backendData = {
         name: fraternityData.name,
-        type: fraternityData.type.toLowerCase(), // 'Fraternity' -> 'fraternity'
+        type: typeLower, // 'Fraternity' -> 'fraternity'
         verification_email: fraternityData.verification_email || null,
-        photo_url: fraternityData.photo || null,
+        photo_url: fraternityData.photo_url || null,
         description: fraternityData.description || null,
       }
+
+      // Debug logging (remove in production)
+      console.log('Creating fraternity with data:', { 
+        ...backendData, 
+        photo_url: backendData.photo_url ? (backendData.photo_url.substring(0, 50) + '...') : null,
+        photo_url_length: backendData.photo_url ? backendData.photo_url.length : 0
+      })
 
       const { data, error: createError } = await createFraternityAction(backendData)
 
       if (createError) {
-        // Handle duplicate name warning
-        if (createError.code === 'DUPLICATE_NAME' && createError.allowCreation) {
-          // User can still proceed - backend allows creation but flags for review
-          // We'll just show a success message and redirect
-          // The duplicate warning is already handled in the form
-        } else {
-          setError(createError.message || 'Failed to create fraternity')
-          setLoading(false)
-          return
+        // Debug logging for type errors
+        if (createError.message?.includes('Type must be one of')) {
+          console.error('Type validation error:', {
+            originalType: fraternityData.type,
+            convertedType: typeLower,
+            backendData: backendData.type,
+            fullBackendData: backendData
+          })
         }
+
+        // Duplicate name now blocks creation - show error
+        setError(createError.message || 'Failed to create fraternity')
+        setLoading(false)
+        return
       }
 
       if (data) {

@@ -10,7 +10,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import PhotoUpload from '@/components/PhotoUpload'
@@ -27,11 +27,25 @@ export default function FraternityForm({
   const [name, setName] = useState('')
   const [type, setType] = useState('Fraternity')
   const [verificationEmail, setVerificationEmail] = useState('')
-  const [photo, setPhoto] = useState(null)
+  const [photo_url, setPhoto_url] = useState(null)
   const [description, setDescription] = useState('')
   const [validationErrors, setValidationErrors] = useState({})
-  const [showDuplicateWarning, setShowDuplicateWarning] = useState(false)
   const [pendingSubmit, setPendingSubmit] = useState(false)
+  
+  // Debug: Log when photo state changes
+  useEffect(() => {
+    if (photo_url) {
+      console.log('FraternityForm: Photo URL state updated to:', photo_url)
+    }
+  }, [photo_url])
+
+  // Reset pendingSubmit when parent loading state changes to false
+  // This ensures the form is enabled again after an error
+  useEffect(() => {
+    if (!loading && pendingSubmit) {
+      setPendingSubmit(false)
+    }
+  }, [loading, pendingSubmit])
 
   const validate = () => {
     const errors = {}
@@ -45,9 +59,9 @@ export default function FraternityForm({
       errors.name = 'Name must be less than 100 characters'
     }
 
-    // Type validation
-    if (!type || !['Fraternity', 'Sorority', 'Other'].includes(type)) {
-      errors.type = 'Type is required'
+    // Type validation - ensure type is set and valid
+    if (!type || typeof type !== 'string' || !['Fraternity', 'Sorority', 'Other'].includes(type.trim())) {
+      errors.type = 'Please select a type (Fraternity, Sorority, or Other)'
     }
 
     // Verification email validation (optional, but must be valid if provided)
@@ -66,43 +80,47 @@ export default function FraternityForm({
       return
     }
 
-    // Check for duplicate name (this would be handled by backend, but we can show warning)
-    // For now, we'll submit and let backend handle duplicate detection
-    // If backend returns duplicate error, we can show the warning modal
+    // Duplicate detection is handled by backend - it will block creation if duplicate found
     
+    // Ensure type is set before submitting
+    // Double-check by reading from form element as fallback in case state is out of sync
+    const form = e.currentTarget
+    const checkedRadio = form.querySelector('input[name="type"]:checked')
+    const formType = checkedRadio?.value || type
+    
+    if (!formType || typeof formType !== 'string' || !['Fraternity', 'Sorority', 'Other'].includes(formType.trim())) {
+      setValidationErrors({ ...validationErrors, type: 'Please select a type (Fraternity, Sorority, or Other)' })
+      setPendingSubmit(false)
+      return
+    }
+
     const fraternityData = {
       name: name.trim(),
-      type,
+      type: formType.trim(), // Use form value as source of truth
       school_id: schoolId,
       verification_email: verificationEmail.trim() || null,
-      photo: photo || null,
+      photo_url: photo_url || null,
       description: description.trim() || null,
     }
+
+    // Debug logging (remove in production)
+    console.log('FraternityForm submitting:', { 
+      ...fraternityData, 
+      photo_url: photo_url ? (photo_url.substring(0, 50) + '...') : null, 
+      type: formType,
+      photo_url_length: photo_url ? photo_url.length : 0
+    })
 
     setPendingSubmit(true)
     try {
       await onSubmit(fraternityData)
+      // If onSubmit completes without error, reset pending state
+      // (Note: onSubmit may still show errors via the error prop from parent)
+      setPendingSubmit(false)
     } catch (err) {
-      // If duplicate error, show warning
-      if (err.message?.toLowerCase().includes('duplicate')) {
-        setShowDuplicateWarning(true)
-      }
+      // Error handling is done by parent component
       setPendingSubmit(false)
     }
-  }
-
-  const handleContinueAnyway = async () => {
-    setShowDuplicateWarning(false)
-    const fraternityData = {
-      name: name.trim(),
-      type,
-      school_id: schoolId,
-      verification_email: verificationEmail.trim() || null,
-      photo: photo || null,
-      description: description.trim() || null,
-      flagged: true, // Flag for review
-    }
-    await onSubmit(fraternityData)
   }
 
   return (
@@ -186,9 +204,10 @@ export default function FraternityForm({
         {/* Photo (Optional) */}
         <div>
           <PhotoUpload
-            value={photo}
-            onChange={setPhoto}
+            value={photo_url}
+            onChange={(url) => setPhoto_url(url)}
             userId={userId}
+            uploadType="fraternity"
             required={false}
           />
         </div>
@@ -237,38 +256,6 @@ export default function FraternityForm({
           </Button>
         </div>
       </form>
-
-      {/* Duplicate Warning Modal */}
-      {showDuplicateWarning && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <Card className="max-w-md w-full">
-            <h3 className="text-heading2 text-neutral-black mb-2">
-              Duplicate Name Detected
-            </h3>
-            <p className="text-bodySmall text-gray-dark mb-6">
-              A fraternity with this name already exists at your school. Are you sure you want to create another?
-            </p>
-            <div className="flex gap-3">
-              <Button
-                onClick={() => setShowDuplicateWarning(false)}
-                variant="secondary"
-                size="large"
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleContinueAnyway}
-                variant="primary"
-                size="large"
-                className="flex-1"
-              >
-                Continue Anyway
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
     </>
   )
 }

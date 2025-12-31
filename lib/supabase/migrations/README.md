@@ -10,8 +10,10 @@ Run these migrations in order in your Supabase SQL Editor:
 2. **002_missing_tables.sql** - Creates new tables needed for MVP
 3. **003_rls_policies.sql** - Sets up Row Level Security policies
 4. **004_functions.sql** - Creates database functions and triggers
-5. **009_create_school_table.sql** - Creates school table for campus detection
-6. **010_add_test_schools.sql** - Adds test schools for development/testing (optional)
+5. **005_storage_setup.sql** - Sets up storage buckets for profile and fraternity photos
+6. **009_create_school_table.sql** - Creates school table for campus detection
+7. **010_add_test_schools.sql** - Adds test schools for development/testing (optional)
+8. **011_fraternity_verification.sql** - Adds verification fields, member count tracking, and creator_id
 
 ## How to Run
 
@@ -63,6 +65,13 @@ Run these migrations in order in your Supabase SQL Editor:
 - Adds 30 common universities for testing
 - Safe to run multiple times (skips existing schools)
 - Useful for testing the campus search feature
+
+### 011_fraternity_verification.sql
+- Adds verification fields to fraternity table (email_verified, member_verified, etc.)
+- Adds `creator_id` field to explicitly track who created each fraternity
+- Creates fraternity_reports table for reporting fake/duplicate fraternities
+- Adds triggers to auto-update member counts and verification status
+- Backfills existing fraternities with their creator (first admin)
 
 ## Safety Notes
 

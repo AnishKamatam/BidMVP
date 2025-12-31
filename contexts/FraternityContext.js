@@ -29,7 +29,7 @@ export const useFraternity = () => {
 
 // Provider component that wraps the app and manages fraternity state
 export function FraternityProvider({ children }) {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [userFraternities, setUserFraternities] = useState([]) // Stores user's fraternities
   const [loading, setLoading] = useState(true) // True until initial check completes
   const [error, setError] = useState(null) // Error message
@@ -74,16 +74,48 @@ export function FraternityProvider({ children }) {
     setSelectedFraternity(fraternityId)
   }
 
-  // Fetch fraternities when user changes
+  // Fetch fraternities when user changes (but wait for auth to finish loading)
   useEffect(() => {
+    let mounted = true
+    let timeoutId = null
+
+    // Wait for auth to finish loading before checking user
+    // This prevents race conditions where we try to fetch before auth is ready
+    if (authLoading) {
+      // Auth is still loading, keep fraternity loading state
+      return
+    }
+
     if (user?.id) {
-      fetchUserFraternities()
+      // Set timeout to prevent infinite loading (8 seconds max)
+      timeoutId = setTimeout(() => {
+        if (mounted) {
+          console.warn('Fraternity fetch timed out after 8 seconds, setting loading to false')
+          setLoading(false)
+        }
+      }, 8000)
+
+      fetchUserFraternities().finally(() => {
+        if (mounted && timeoutId) {
+          clearTimeout(timeoutId)
+          timeoutId = null
+        }
+      })
     } else {
+      // No user - clear fraternities and set loading to false immediately
       setUserFraternities([])
       setLoading(false)
+      setError(null)
+    }
+
+    return () => {
+      mounted = false
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id])
+  }, [user?.id, authLoading])
 
   // Package everything we want to expose to consuming components
   const value = {

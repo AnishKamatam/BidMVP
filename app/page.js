@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useFraternity } from '@/contexts/FraternityContext'
 import AuthModal from '@/components/AuthModal'
 import FraternityPrompt from '@/components/FraternityPrompt'
+import FraternityCard from '@/components/FraternityCard'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
 import { useRouter } from 'next/navigation'
@@ -24,6 +25,13 @@ export default function Home() {
   const { user, loading: authLoading } = useAuth()
   const { userFraternities, loading: fraternityLoading } = useFraternity()
   const router = useRouter()
+
+  // Filter to admin fraternities only
+  const adminFraternities = userFraternities
+    .filter(f => f.role === 'admin')
+    .map(f => f.fraternity) // Extract fraternity object for FraternityCard
+
+  const isAdmin = adminFraternities.length > 0
 
   // Check if prompt was dismissed in localStorage
   useEffect(() => {
@@ -56,10 +64,11 @@ export default function Home() {
   const showPrompt = user && 
                      !promptDismissed && 
                      !fraternityLoading && 
+                     !isAdmin && // Don't show prompt if user is admin
                      userFraternities.length === 0
   
   // Show loading state while checking auth
-  if (authLoading) {
+  if (authLoading || fraternityLoading) {
     return (
       <main className="h-screen w-screen bg-white flex items-center justify-center">
         <Card className="text-center">
@@ -92,34 +101,81 @@ export default function Home() {
         />
       )}
 
-      {/* Center area - empty for now, can add content later */}
-      <div className="flex-1 flex items-center justify-center px-6">
-        {/* Add any welcome content or branding here if needed */}
+      {/* Center area - Dashboard Hub for admins, placeholder for others */}
+      <div className="flex-1 overflow-y-auto px-6 py-8">
+        {user && isAdmin ? (
+          // Dashboard Hub Section
+          <div className="space-y-6">
+            {/* Header */}
+            <div>
+              <h1 className="text-heading1 text-neutral-black mb-4">
+                My Fraternities
+              </h1>
+              <Button
+                onClick={() => router.push('/fraternities/create')}
+                variant="primary"
+                size="large"
+                className="w-full"
+              >
+                Create New Fraternity
+              </Button>
+            </div>
+
+            {/* Fraternity Cards List */}
+            {adminFraternities.length > 0 ? (
+              <div className="space-y-4">
+                {adminFraternities.map((fraternity) => (
+                  <FraternityCard
+                    key={fraternity.id}
+                    fraternity={fraternity}
+                    onClick={() => router.push(`/fraternities/${fraternity.id}`)}
+                    showMemberCount={true}
+                    variant="default"
+                  />
+                ))}
+              </div>
+            ) : (
+              // Empty State (edge case)
+              <Card>
+                <p className="text-center text-bodySmall text-gray-medium py-8">
+                  No fraternities found. Create your first fraternity to get started.
+                </p>
+              </Card>
+            )}
+          </div>
+        ) : (
+          // Placeholder for non-admin users (current empty center area)
+          <div className="flex items-center justify-center">
+            {/* Empty for now - future: redirect to events feed */}
+          </div>
+        )}
       </div>
       
-      {/* Bottom buttons - always visible */}
-      <div className="w-full px-6 pb-10 safe-area-bottom">
-        <div className="flex gap-4">
-          {/* Log In button - secondary variant */}
-          <Button
-            onClick={openLoginModal}
-            variant="secondary"
-            size="large"
-            className="flex-1"
-          >
-            Log In
-          </Button>
-          {/* Sign Up button - primary variant */}
-          <Button
-            onClick={openSignupModal}
-            variant="primary"
-            size="large"
-            className="flex-1"
-          >
-            Sign Up
-          </Button>
+      {/* Bottom buttons - only show when not logged in */}
+      {!user && (
+        <div className="w-full px-6 pb-10 safe-area-bottom">
+          <div className="flex gap-4">
+            {/* Log In button - secondary variant */}
+            <Button
+              onClick={openLoginModal}
+              variant="secondary"
+              size="large"
+              className="flex-1"
+            >
+              Log In
+            </Button>
+            {/* Sign Up button - primary variant */}
+            <Button
+              onClick={openSignupModal}
+              variant="primary"
+              size="large"
+              className="flex-1"
+            >
+              Sign Up
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Reusable auth modal - switches between login and signup mode */}
       <AuthModal

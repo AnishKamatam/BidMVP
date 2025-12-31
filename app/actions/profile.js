@@ -17,11 +17,32 @@ import { createClient } from '@/lib/supabase/server'
  * @returns {Promise<{data: {url: string}|null, error: object|null}>}
  */
 export async function uploadProfilePhoto(userId, formData) {
-  const file = formData.get('file')
-  if (!file || !(file instanceof File)) {
-    return { data: null, error: { message: 'No file provided' } }
+  try {
+    // Validate userId
+    if (!userId) {
+      return { data: null, error: { message: 'User ID is required for photo upload' } }
+    }
+
+    // Validate formData
+    if (!formData) {
+      return { data: null, error: { message: 'FormData is required' } }
+    }
+
+    const file = formData.get('file')
+    if (!file || !(file instanceof File)) {
+      return { data: null, error: { message: 'No file provided' } }
+    }
+
+    return await uploadPhoto(userId, file)
+  } catch (error) {
+    console.error('uploadProfilePhoto server action error:', error)
+    return {
+      data: null,
+      error: {
+        message: error.message || 'Failed to upload profile photo. Please try again.'
+      }
+    }
   }
-  return await uploadPhoto(userId, file)
 }
 
 /**
@@ -170,5 +191,21 @@ export async function getSchoolByDomainAction(domain) {
  */
 export async function searchUserByEmailAction(email) {
   return await searchUserByEmail(email)
+}
+
+/**
+ * Upload fraternity photo (Server Action wrapper)
+ * @param {string} fraternityId - Fraternity ID (optional, for existing fraternities)
+ * @param {FormData} formData - FormData containing the file
+ * @param {string} userId - User ID (required for creation, optional for updates)
+ * @returns {Promise<{data: {url: string}|null, error: object|null}>}
+ */
+export async function uploadFraternityPhotoAction(fraternityId, formData, userId = null) {
+  const file = formData.get('file')
+  if (!file || !(file instanceof File)) {
+    return { data: null, error: { message: 'No file provided' } }
+  }
+  const { uploadFraternityPhoto } = await import('@/lib/storage/upload')
+  return await uploadFraternityPhoto(fraternityId || null, file, userId)
 }
 

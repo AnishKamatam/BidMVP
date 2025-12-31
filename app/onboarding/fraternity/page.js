@@ -57,9 +57,9 @@ export default function FraternitySelectionPage() {
         setSchoolName(school.name)
 
         // Check if user already has fraternities
-        const { data: fraternities, error: fraternitiesError } = await getUserFraternitiesAction(user.id)
+        const { data: fraternities, error: fraternitiesError } = await getUserFraternitiesAction()
         if (fraternitiesError) {
-          console.error('Error fetching fraternities:', fraternitiesError)
+          console.error('Error fetching fraternities:', fraternitiesError.message || fraternitiesError)
         } else {
           setUserFraternities(fraternities || [])
         }

@@ -33,20 +33,30 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let mounted = true
     let timeoutId = null
+    let subscription = null
+    let initialCheckComplete = false // Track if initial session check is done
 
-    // Set up a timeout to prevent infinite loading (10 seconds max)
+    // Check for missing environment variables
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error('Missing Supabase environment variables. Please check your .env file.')
+      setLoading(false)
+      return
+    }
+
+    // Set up a timeout to prevent infinite loading (5 seconds max)
     timeoutId = setTimeout(() => {
-      if (mounted) {
-        console.warn('Auth session check timed out, setting loading to false')
+      if (mounted && !initialCheckComplete) {
+        console.warn('Auth session check timed out after 5 seconds, setting loading to false')
+        initialCheckComplete = true
         setLoading(false)
       }
-    }, 10000)
+    }, 5000)
 
     // On mount: Check if user already has an active session
     // This happens when user refreshes page or returns to app
     supabase.auth.getSession()
       .then(({ data: { session }, error }) => {
-        if (!mounted) return
+        if (!mounted || initialCheckComplete) return
         
         if (timeoutId) {
           clearTimeout(timeoutId)
@@ -57,11 +67,12 @@ export function AuthProvider({ children }) {
           console.error('Error getting session:', error)
         }
         
+        initialCheckComplete = true
         setUser(session?.user ?? null)
         setLoading(false)
       })
       .catch((error) => {
-        if (!mounted) return
+        if (!mounted || initialCheckComplete) return
         
         if (timeoutId) {
           clearTimeout(timeoutId)
@@ -70,16 +81,25 @@ export function AuthProvider({ children }) {
         
         console.error('Failed to get session:', error)
         // Still set loading to false so app doesn't get stuck
+        initialCheckComplete = true
         setUser(null)
         setLoading(false)
       })
 
-    // Set up listener for auth state changes
+    // Set up listener for FUTURE auth state changes (after initial check)
     // Fires when user logs in, logs out, token refreshes, etc.
+    // IMPORTANT: This listener may fire immediately with current session,
+    // but we ignore it until initial check is complete
     const {
-      data: { subscription },
+      data: { subscription: authSubscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return
+      
+      // Only process auth state changes AFTER initial session check is complete
+      // This prevents race conditions where the listener fires before getSession() completes
+      if (!initialCheckComplete) {
+        return // Ignore until initial check is done
+      }
       
       if (timeoutId) {
         clearTimeout(timeoutId)
@@ -87,26 +107,29 @@ export function AuthProvider({ children }) {
       }
       
       setUser(session?.user ?? null)
-      setLoading(false)
+      // Don't set loading to false here - it's already false after initial check
+      // Only update user state for future auth changes
     })
+    
+    subscription = authSubscription
 
     // Cleanup: unsubscribe from listener and clear timeout when component unmounts
     return () => {
       mounted = false
+      initialCheckComplete = true // Prevent any pending callbacks from running
       if (timeoutId) {
         clearTimeout(timeoutId)
       }
-      subscription.unsubscribe()
+      if (subscription) {
+        subscription.unsubscribe()
+      }
     }
-  }, [supabase.auth])
+  }, []) // Empty dependency array - only run once on mount
 
   // Create new user account
   // Supabase will send a confirmation email by default
   // The edufilter.sql trigger validates .edu emails at the database level
   const signUp = async (email, password, returnTo = null) => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3bf1bc05-78e8-4bdd-bb3f-5c49e2efc81a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.js:56',message:'signUp called',data:{email,hasPassword:!!password,returnTo},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     
     // Capture the current page path to return user after email verification
     // If returnTo is not provided, use current pathname (or '/' as fallback)
@@ -145,12 +168,6 @@ export function AuthProvider({ children }) {
       }
     })
     
-    // #region agent log
-    const userData = data?.user || {}
-    const confirmationSentAt = userData.confirmation_sent_at
-    const emailConfirmed = userData.email_confirmed_at
-    fetch('http://127.0.0.1:7242/ingest/3bf1bc05-78e8-4bdd-bb3f-5c49e2efc81a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.js:66',message:'After supabase.auth.signUp',data:{hasData:!!data,hasError:!!error,errorMessage:error?.message,userEmail:userData.email,userID:userData.id,confirmationSentAt:confirmationSentAt,emailConfirmed:emailConfirmed,hasSession:!!data?.session},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
     
     return { data, error }
   }
@@ -172,9 +189,6 @@ export function AuthProvider({ children }) {
 
   // Resend confirmation email
   const resendConfirmationEmail = async (email, returnTo = null) => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3bf1bc05-78e8-4bdd-bb3f-5c49e2efc81a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.js:105',message:'resendConfirmationEmail called',data:{email,returnTo},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-    // #endregion
     
     // Capture the current page path to return user after email verification
     let redirectPath = returnTo
@@ -207,15 +221,9 @@ export function AuthProvider({ children }) {
       }
     }
     
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3bf1bc05-78e8-4bdd-bb3f-5c49e2efc81a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.js:117',message:'Before resend - options',data:{email,hasRedirectTo:!!resendOptions.options.emailRedirectTo},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-    // #endregion
     
     const { data, error } = await supabase.auth.resend(resendOptions)
     
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3bf1bc05-78e8-4bdd-bb3f-5c49e2efc81a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.js:123',message:'After resend confirmation',data:{hasData:!!data,hasError:!!error,errorMessage:error?.message,errorCode:error?.status,errorName:error?.name,fullError:error?JSON.stringify(error):null,fullData:data?JSON.stringify(data):null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-    // #endregion
     
     return { data, error }
   }

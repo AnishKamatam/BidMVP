@@ -127,18 +127,92 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- ============================================
 -- Helper function to check if a user is an admin of a group
 -- Used in RLS policies and application logic
+-- NOTE: These functions are also defined in 003_rls_policies.sql
+-- We use CREATE OR REPLACE here (without DROP) to avoid conflicts with RLS policies
+-- If 003_rls_policies.sql has already been run, this will update the functions
+-- If 003_rls_policies.sql hasn't been run yet, this ensures the functions exist
 
-CREATE OR REPLACE FUNCTION is_group_admin(user_id TEXT, group_id TEXT)
-RETURNS BOOLEAN AS $$
+CREATE OR REPLACE FUNCTION is_group_admin(p_user_id TEXT, p_group_id TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   RETURN EXISTS (
     SELECT 1 FROM group_members
-    WHERE group_members.group_id = is_group_admin.group_id
-    AND group_members.user_id = is_group_admin.user_id
-    AND group_members.role = 'admin'
+    WHERE group_id = p_group_id
+    AND user_id = p_user_id
+    AND role = 'admin'
   );
 END;
-$$ LANGUAGE plpgsql STABLE;
+$$;
+
+-- Helper function to check if user is a member of a group
+-- SECURITY DEFINER to bypass RLS and prevent infinite recursion
+CREATE OR REPLACE FUNCTION is_group_member(p_group_id TEXT, p_user_id TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM group_members
+    WHERE group_id = p_group_id
+    AND user_id = p_user_id
+  );
+END;
+$$;
+
+-- Helper function to check if a group has any members
+-- SECURITY DEFINER to bypass RLS - used to allow first admin insertion
+CREATE OR REPLACE FUNCTION group_has_members(p_group_id TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM group_members
+    WHERE group_id = p_group_id
+  );
+END;
+$$;
+
+-- Function to add the first admin member to a fraternity
+-- SECURITY DEFINER to bypass RLS - allows fraternity creator to add themselves
+-- This is used when creating a new fraternity
+CREATE OR REPLACE FUNCTION add_first_admin_member(
+  p_group_id TEXT,
+  p_user_id TEXT,
+  p_member_id TEXT DEFAULT NULL
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_member_id TEXT;
+BEGIN
+  -- Generate member ID if not provided
+  v_member_id := COALESCE(p_member_id, gen_random_uuid()::TEXT);
+  
+  -- Insert the first admin member
+  -- This bypasses RLS because the function is SECURITY DEFINER
+  INSERT INTO group_members (id, group_id, user_id, role, joined_at)
+  VALUES (
+    v_member_id,
+    p_group_id,
+    p_user_id,
+    'admin',
+    CURRENT_TIMESTAMP
+  )
+  ON CONFLICT (group_id, user_id) DO NOTHING;
+END;
+$$;
 
 -- ============================================
 -- 5. Trigger: Auto-update safety score on interaction
@@ -153,6 +227,9 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Drop trigger if it exists (for re-running migration)
+DROP TRIGGER IF EXISTS update_safety_on_interaction ON interaction;
 
 CREATE TRIGGER update_safety_on_interaction
   AFTER INSERT ON interaction
@@ -172,6 +249,9 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Drop trigger if it exists (for re-running migration)
+DROP TRIGGER IF EXISTS update_safety_on_report ON report;
 
 CREATE TRIGGER update_safety_on_report
   AFTER INSERT ON report

@@ -108,9 +108,6 @@ export default function OnboardingPage() {
 
   // Handle profile submission
   const handleProfileSubmit = async (profileData) => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3bf1bc05-78e8-4bdd-bb3f-5c49e2efc81a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onboarding/page.js:69',message:'handleProfileSubmit called',data:{userId:user?.id,userEmail:user?.email,hasName:!!profileData?.name,hasYear:!!profileData?.year,hasGender:!!profileData?.gender,hasProfilePic:!!profileData?.profile_pic,profileLoading},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
     
     if (!user?.id) {
       setError('User not authenticated')
@@ -126,17 +123,9 @@ export default function OnboardingPage() {
     setError(null)
 
     try {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/3bf1bc05-78e8-4bdd-bb3f-5c49e2efc81a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onboarding/page.js:86',message:'Before createProfile call',data:{userId:user.id,email:user.email},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
-      
       // Create user profile using Server Action
       // Pass email from user object (available from AuthContext)
       const { data, error: createError } = await createProfile(user.id, profileData, user.email)
-      
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/3bf1bc05-78e8-4bdd-bb3f-5c49e2efc81a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onboarding/page.js:90',message:'After createProfile call',data:{userId:user.id,hasData:!!data,hasError:!!createError,errorMessage:createError?.message,errorCode:createError?.code,errorExisting:createError?.existing},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
       
       if (createError) {
         setError(createError.message || 'Failed to create profile')

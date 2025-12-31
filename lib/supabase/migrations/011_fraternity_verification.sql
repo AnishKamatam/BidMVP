@@ -13,12 +13,14 @@ ADD COLUMN IF NOT EXISTS member_verified BOOLEAN DEFAULT FALSE,
 ADD COLUMN IF NOT EXISTS member_count INTEGER DEFAULT 1,
 ADD COLUMN IF NOT EXISTS quality_member_count INTEGER DEFAULT 0,
 ADD COLUMN IF NOT EXISTS flagged_for_review BOOLEAN DEFAULT FALSE,
-ADD COLUMN IF NOT EXISTS verification_requested_at TIMESTAMP;
+ADD COLUMN IF NOT EXISTS verification_requested_at TIMESTAMP,
+ADD COLUMN IF NOT EXISTS creator_id TEXT REFERENCES "User"(id) ON DELETE SET NULL;
 
 -- Add indexes for verification queries
 CREATE INDEX IF NOT EXISTS idx_fraternity_email_verified ON fraternity(email_verified) WHERE email_verified = TRUE;
 CREATE INDEX IF NOT EXISTS idx_fraternity_member_verified ON fraternity(member_verified) WHERE member_verified = TRUE;
 CREATE INDEX IF NOT EXISTS idx_fraternity_quality_member_count ON fraternity(quality_member_count);
+CREATE INDEX IF NOT EXISTS idx_fraternity_creator_id ON fraternity(creator_id);
 
 -- ============================================
 -- 2. Create fraternity_reports table
@@ -77,7 +79,11 @@ CREATE POLICY "Admins can update reports"
 -- Quality members = members with verified email AND completed profile
 
 CREATE OR REPLACE FUNCTION calculate_quality_member_count(group_id_param TEXT)
-RETURNS INTEGER AS $$
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
   quality_count INTEGER;
 BEGIN
@@ -93,14 +99,18 @@ BEGIN
   
   RETURN COALESCE(quality_count, 0);
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 -- ============================================
 -- 4. Function to update member count
 -- ============================================
 
 CREATE OR REPLACE FUNCTION update_fraternity_member_count()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
   group_id_val TEXT;
   new_member_count INTEGER;
@@ -126,7 +136,7 @@ BEGIN
   
   RETURN COALESCE(NEW, OLD);
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 -- ============================================
 -- 5. Triggers to auto-update member count
@@ -147,6 +157,39 @@ CREATE TRIGGER update_member_count_on_delete
   AFTER DELETE ON group_members
   FOR EACH ROW
   EXECUTE FUNCTION update_fraternity_member_count();
+
+-- ============================================
+-- 5b. RPC Function to manually update member counts
+-- ============================================
+-- This can be called from application code to ensure counts are updated
+-- SECURITY DEFINER allows it to bypass RLS when updating fraternity table
+
+CREATE OR REPLACE FUNCTION refresh_fraternity_member_counts(p_group_id TEXT)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  new_member_count INTEGER;
+  new_quality_count INTEGER;
+BEGIN
+  -- Calculate total member count
+  SELECT COUNT(*) INTO new_member_count
+  FROM group_members
+  WHERE group_id = p_group_id;
+  
+  -- Calculate quality member count
+  SELECT calculate_quality_member_count(p_group_id) INTO new_quality_count;
+  
+  -- Update fraternity table (bypasses RLS due to SECURITY DEFINER)
+  UPDATE fraternity
+  SET 
+    member_count = new_member_count,
+    quality_member_count = new_quality_count
+  WHERE id = p_group_id;
+END;
+$$;
 
 -- ============================================
 -- 6. Function to auto-update verification status
@@ -227,14 +270,31 @@ BEGIN
 END $$;
 
 -- ============================================
+-- Backfill creator_id for existing fraternities
+-- ============================================
+-- Set creator_id to the first admin member (earliest joined_at)
+-- This assumes the first admin is the creator
+UPDATE fraternity f
+SET creator_id = (
+  SELECT user_id 
+  FROM group_members 
+  WHERE group_id = f.id 
+  AND role = 'admin'
+  ORDER BY joined_at ASC 
+  LIMIT 1
+)
+WHERE creator_id IS NULL;
+
+-- ============================================
 -- Comments
 -- ============================================
 -- This migration adds:
 -- 1. Verification fields to fraternity table (email optional, member count primary)
--- 2. fraternity_reports table for reporting fake/duplicate fraternities
--- 3. Auto-calculation of member_count and quality_member_count
--- 4. Auto-verification based on quality member count (7+ = verified, 10+ = fully verified)
--- 5. Quality member definition: verified email + completed profile
+-- 2. creator_id field to explicitly track who created each fraternity
+-- 3. fraternity_reports table for reporting fake/duplicate fraternities
+-- 4. Auto-calculation of member_count and quality_member_count
+-- 5. Auto-verification based on quality member count (7+ = verified, 10+ = fully verified)
+-- 6. Quality member definition: verified email + completed profile
 -- 
 -- Verification thresholds:
 -- - Unverified: < 7 quality members

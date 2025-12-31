@@ -5,14 +5,17 @@
 //   - onChange: function (called with file or URL)
 //   - required: boolean (default: false)
 //   - error: string (error message to display)
-//   - userId: string (required) - User ID for upload
+//   - userId: string (optional) - User ID for profile photo upload
+//   - fraternityId: string (optional) - Fraternity ID for fraternity photo upload
+//   - uploadType: 'profile' | 'fraternity' (default: 'profile')
 
 'use client'
 
 import { useState, useRef } from 'react'
 import { uploadProfilePhoto } from '@/app/actions/profile'
+import { uploadFraternityPhotoAction } from '@/app/actions/profile'
 
-export default function PhotoUpload({ value, onChange, required = false, error, userId }) {
+export default function PhotoUpload({ value, onChange, required = false, error, userId, fraternityId, uploadType = 'profile' }) {
   const [preview, setPreview] = useState(value || null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState(null)
@@ -37,8 +40,15 @@ export default function PhotoUpload({ value, onChange, required = false, error, 
       return
     }
 
-    if (!userId) {
-      setUploadError('User ID is required for photo upload')
+    // Validate required ID based on upload type
+    if (uploadType === 'profile' && !userId) {
+      setUploadError('User ID is required for profile photo upload. Please refresh the page and try again.')
+      console.error('PhotoUpload: userId is missing for profile upload', { userId, uploadType })
+      return
+    }
+    // For fraternity uploads: fraternityId is optional (for creation), but userId is required for temp path
+    if (uploadType === 'fraternity' && !userId) {
+      setUploadError('User ID is required for fraternity photo upload')
       return
     }
 
@@ -53,21 +63,56 @@ export default function PhotoUpload({ value, onChange, required = false, error, 
       }
       reader.readAsDataURL(file)
 
-      // Upload file using Server Action
+      // Upload file using Server Action based on type
       const formData = new FormData()
       formData.append('file', file)
-      const result = await uploadProfilePhoto(userId, formData)
+      
+      let result
+      try {
+        result = uploadType === 'fraternity'
+          ? await uploadFraternityPhotoAction(fraternityId || null, formData, userId)
+          : await uploadProfilePhoto(userId, formData)
+      } catch (fetchError) {
+        // Handle fetch/network errors
+        console.error('PhotoUpload: Server action call failed:', fetchError)
+        setUploadError(
+          fetchError.message || 
+          'Network error: Could not connect to server. Please check your internet connection and try again.'
+        )
+        setPreview(null)
+        setUploading(false)
+        return
+      }
+      
+      // Check if result is valid
+      if (!result) {
+        console.error('PhotoUpload: Server action returned no result')
+        setUploadError('Server did not respond. Please try again.')
+        setPreview(null)
+        setUploading(false)
+        return
+      }
       
       if (result.error) {
+        console.error('PhotoUpload: Upload error:', result.error)
         setUploadError(result.error.message || 'Failed to upload photo')
         setPreview(null)
+        setUploading(false)
         return
       }
 
       // Success - update parent with photo URL
-      onChange(result.data.url)
+      if (result.data?.url) {
+        console.log('PhotoUpload: Upload successful, URL:', result.data.url)
+        onChange(result.data.url)
+      } else {
+        console.error('PhotoUpload: Upload succeeded but no URL in result:', result)
+        setUploadError('Upload succeeded but no URL was returned')
+        setPreview(null)
+      }
     } catch (err) {
-      setUploadError(err.message || 'Failed to upload photo')
+      console.error('PhotoUpload: Unexpected error:', err)
+      setUploadError(err.message || 'An unexpected error occurred. Please try again.')
       setPreview(null)
     } finally {
       setUploading(false)

@@ -150,9 +150,24 @@ export default function FraternitySelector({
       {/* Selected Fraternity Display */}
       {selectedFraternity && (
         <div className="space-y-3">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-bodySmall font-semibold text-gray-dark">Selected Fraternity</h3>
+            <button
+              onClick={() => {
+                setSelectedFraternity(null)
+                setSearchQuery('')
+                if (searchInputRef.current) {
+                  searchInputRef.current.focus()
+                }
+              }}
+              className="text-bodySmall text-primary-ui hover:text-primary-accent transition-colors"
+            >
+              Change Selection
+            </button>
+          </div>
           <FraternityCard 
             fraternity={selectedFraternity} 
-            variant="default"
+            variant="compact"
             showMemberCount={true}
           />
           <Button

@@ -15,7 +15,9 @@ import {
   checkVerificationStatus,
   reportFraternity,
   getFraternityReports,
-  reviewFraternityReport
+  reviewFraternityReport,
+  getFraternityCreator,
+  checkIsCreator
 } from '@/lib/supabase/fraternities'
 
 import {
@@ -168,4 +170,20 @@ export async function reviewFraternityReportAction(reportId, action, notes) {
     return { data: null, error: { message: 'Not authenticated' } }
   }
   return await reviewFraternityReport(reportId, adminUserId, action, notes)
+}
+
+// ============================================
+// Creator Actions
+// ============================================
+
+export async function getFraternityCreatorAction(fraternityId) {
+  return await getFraternityCreator(fraternityId)
+}
+
+export async function checkIsCreatorAction(fraternityId) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return { data: { isCreator: false }, error: { message: 'Not authenticated' } }
+  }
+  return await checkIsCreator(userId, fraternityId)
 }

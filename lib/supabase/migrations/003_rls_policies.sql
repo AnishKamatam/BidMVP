@@ -88,26 +88,106 @@ CREATE POLICY "Authenticated users can create fraternities"
 DROP POLICY IF EXISTS "Members can read group members" ON group_members;
 DROP POLICY IF EXISTS "Admins can manage members" ON group_members;
 
+-- Create helper functions needed for group_members policies
+-- These must be defined here before the policies that use them
+-- SECURITY DEFINER functions bypass RLS to prevent infinite recursion
+-- Drop existing functions first to allow parameter name changes
+
+DROP FUNCTION IF EXISTS is_group_member(TEXT, TEXT);
+DROP FUNCTION IF EXISTS is_group_admin(TEXT, TEXT);
+DROP FUNCTION IF EXISTS group_has_members(TEXT);
+
+-- Helper function to check if user is a member of a group
+-- SECURITY DEFINER to bypass RLS and prevent infinite recursion
+CREATE OR REPLACE FUNCTION is_group_member(p_group_id TEXT, p_user_id TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM group_members
+    WHERE group_id = p_group_id
+    AND user_id = p_user_id
+  );
+END;
+$$;
+
+-- Helper function to check if user is an admin of a group
+-- SECURITY DEFINER to bypass RLS and prevent infinite recursion
+CREATE OR REPLACE FUNCTION is_group_admin(p_user_id TEXT, p_group_id TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM group_members
+    WHERE group_id = p_group_id
+    AND user_id = p_user_id
+    AND role = 'admin'
+  );
+END;
+$$;
+
+-- Helper function to check if a group has any members
+-- SECURITY DEFINER to bypass RLS and prevent infinite recursion
+CREATE OR REPLACE FUNCTION group_has_members(p_group_id TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM group_members
+    WHERE group_id = p_group_id
+  );
+END;
+$$;
+
 -- Members can read their group's members
+-- FIXED: Use SECURITY DEFINER function to avoid infinite recursion in RLS policy
 CREATE POLICY "Members can read group members"
   ON group_members FOR SELECT
   USING (
-    EXISTS (
-      SELECT 1 FROM group_members gm
-      WHERE gm.group_id = group_members.group_id
-      AND gm.user_id = auth.uid()::TEXT
-    )
+    -- Allow if user is viewing their own membership record
+    user_id = auth.uid()::TEXT
+    -- OR if user is a member of the same group (using function to bypass RLS recursion)
+    OR is_group_member(group_id, auth.uid()::TEXT)
   );
 
 -- Only admins can add/remove members
+-- FIXED: Use is_group_admin function to avoid infinite recursion
+-- EXCEPTIONS: 
+--   1. Allow fraternity creator to add themselves as first admin
+--   2. Allow users to request to join (add themselves as member/pledge)
 CREATE POLICY "Admins can manage members"
   ON group_members FOR ALL
   USING (
-    EXISTS (
-      SELECT 1 FROM group_members gm
-      WHERE gm.group_id = group_members.group_id
-      AND gm.user_id = auth.uid()::TEXT
-      AND gm.role = 'admin'
+    is_group_admin(auth.uid()::TEXT, group_id)
+  )
+  WITH CHECK (
+    -- Allow existing admins to add/update members
+    is_group_admin(auth.uid()::TEXT, group_id)
+    -- OR allow creator to add themselves as first admin (no members exist yet)
+    OR (
+      -- User is inserting themselves
+      user_id = auth.uid()::TEXT
+      -- And they're adding themselves as admin
+      AND role = 'admin'
+      -- And no members exist for this group yet (first member)
+      -- Use SECURITY DEFINER function to check this without RLS recursion
+      AND NOT group_has_members(group_id)
+    )
+    -- OR allow users to request to join (add themselves as member or pledge)
+    OR (
+      -- User is inserting themselves
+      user_id = auth.uid()::TEXT
+      -- And they're adding themselves as member or pledge (not admin)
+      AND role IN ('member', 'pledge')
     )
   );
 

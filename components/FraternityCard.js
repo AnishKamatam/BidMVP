@@ -48,19 +48,25 @@ export default function FraternityCard({
             <Avatar 
               src={fraternity.photo_url} 
               alt={fraternity.name}
-              size="small"
+              size="sm"
+              className="flex-shrink-0"
             />
           )}
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-semibold text-neutral-black truncate">
               {fraternity.name}
             </h3>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
               <Badge variant="tag" className="text-xs">
                 {typeLabel}
               </Badge>
               <VerificationStatus fraternity={fraternity} variant="compact" />
             </div>
+            {showMemberCount && (
+              <p className="text-bodySmall text-gray-medium mt-1">
+                {fraternity.quality_member_count || 0}/{fraternity.member_count || 0} Members
+              </p>
+            )}
           </div>
         </div>
       </Card>
