@@ -96,6 +96,21 @@ export default function CreateFraternityPage() {
       const { data, error: createError } = await createFraternityAction(backendData)
 
       if (createError) {
+        // Log full error details for debugging
+        try {
+          console.error('Fraternity creation error:', {
+            message: createError.message,
+            details: createError.details,
+            code: createError.code,
+            errorString: String(createError),
+            errorType: typeof createError,
+            errorKeys: Object.keys(createError || {})
+          })
+        } catch (logError) {
+          console.error('Failed to log error details:', logError)
+          console.error('Raw createError:', createError)
+        }
+
         // Debug logging for type errors
         if (createError.message?.includes('Type must be one of')) {
           console.error('Type validation error:', {
@@ -106,8 +121,15 @@ export default function CreateFraternityPage() {
           })
         }
 
-        // Duplicate name now blocks creation - show error
-        setError(createError.message || 'Failed to create fraternity')
+        // Show error message with details if available
+        let errorMessage = createError.message || 'Failed to create fraternity'
+        if (createError.details) {
+          errorMessage += `: ${createError.details}`
+        }
+        if (createError.code) {
+          console.error('Fraternity creation error code:', createError.code)
+        }
+        setError(errorMessage)
         setLoading(false)
         return
       }
@@ -115,8 +137,9 @@ export default function CreateFraternityPage() {
       if (data) {
         // Refresh fraternity context to include new fraternity
         await refreshFraternities()
-        // Redirect to fraternity dashboard
-        router.push(`/fraternities/${data.id}`)
+        // Use replace instead of push to avoid showing home page during transition
+        // This prevents the brief flash of the welcome/signout screen
+        router.replace(`/fraternities/${data.id}`)
       } else {
         setError('Failed to create fraternity')
         setLoading(false)

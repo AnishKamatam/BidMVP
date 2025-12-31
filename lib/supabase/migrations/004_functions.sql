@@ -184,6 +184,9 @@ $$;
 -- Function to add the first admin member to a fraternity
 -- SECURITY DEFINER to bypass RLS - allows fraternity creator to add themselves
 -- This is used when creating a new fraternity
+-- 
+-- IMPORTANT: This function must exist for fraternity creation to work
+-- If you see "Failed to add creator as admin member" errors, verify this function exists
 CREATE OR REPLACE FUNCTION add_first_admin_member(
   p_group_id TEXT,
   p_user_id TEXT,
@@ -197,11 +200,21 @@ AS $$
 DECLARE
   v_member_id TEXT;
 BEGIN
+  -- Validate inputs
+  IF p_group_id IS NULL OR p_group_id = '' THEN
+    RAISE EXCEPTION 'Group ID cannot be null or empty';
+  END IF;
+  
+  IF p_user_id IS NULL OR p_user_id = '' THEN
+    RAISE EXCEPTION 'User ID cannot be null or empty';
+  END IF;
+  
   -- Generate member ID if not provided
   v_member_id := COALESCE(p_member_id, gen_random_uuid()::TEXT);
   
   -- Insert the first admin member
   -- This bypasses RLS because the function is SECURITY DEFINER
+  -- ON CONFLICT ensures we don't error if member already exists (idempotent)
   INSERT INTO group_members (id, group_id, user_id, role, joined_at)
   VALUES (
     v_member_id,
@@ -211,6 +224,9 @@ BEGIN
     CURRENT_TIMESTAMP
   )
   ON CONFLICT (group_id, user_id) DO NOTHING;
+  
+  -- If no exception is raised, the insert succeeded (or was skipped due to conflict)
+  -- This function returns VOID, so success is indicated by no exception
 END;
 $$;
 

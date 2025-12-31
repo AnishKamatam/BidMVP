@@ -35,12 +35,13 @@ export default function WelcomePage() {
     }
   }, [])
 
-  // Redirect to home if not logged in
+  // Redirect to home immediately - don't render anything to prevent flash
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/')
+    if (!authLoading) {
+      // Use replace instead of push to avoid showing this page at all
+      router.replace('/')
     }
-  }, [user, authLoading, router])
+  }, [authLoading, router])
 
   const handleDismissPrompt = () => {
     setPromptDismissed(true)
@@ -50,62 +51,21 @@ export default function WelcomePage() {
   }
 
   const handleJoinFraternity = () => {
-    router.push('/fraternities/join?returnTo=/welcome')
+    router.push('/fraternities/join?returnTo=/')
   }
 
   const showPrompt = !promptDismissed && 
                      !fraternityLoading && 
                      userFraternities.length === 0
 
-  // Show loading state while checking auth
-  if (authLoading || fraternityLoading) {
-    return (
-      <main className="h-screen w-screen bg-white flex items-center justify-center">
-        <Card className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary-ui border-t-transparent mx-auto mb-4"></div>
-          <p className="text-bodySmall text-gray-medium">Loading...</p>
-        </Card>
-      </main>
-    )
-  }
-
-  // If not logged in, don't render (will redirect)
-  if (!user) {
-    return null
-  }
-
-  // Handle user sign out
-  const handleSignOut = async () => {
-    await signOut()
-    router.push('/')
-  }
-
+  // Don't render anything - just redirect immediately
+  // This prevents any flash of content before redirect
   return (
-    <main className="min-h-screen w-screen bg-white flex flex-col">
-      {/* Fraternity Prompt Banner */}
-      {showPrompt && (
-        <FraternityPrompt
-          onJoin={handleJoinFraternity}
-          onDismiss={handleDismissPrompt}
-          variant="banner"
-        />
-      )}
-
-      {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center px-6">
-        <Card className="text-center max-w-md w-full">
-          <p className="text-heading1 text-neutral-black mb-2">Welcome!</p>
-          <p className="text-bodySmall text-gray-dark mb-6">{user.email}</p>
-          <Button
-            onClick={handleSignOut}
-            variant="secondary"
-            size="large"
-            className="w-full"
-          >
-            Sign Out
-          </Button>
-        </Card>
-      </div>
+    <main className="h-screen w-screen bg-white flex items-center justify-center">
+      <Card className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary-ui border-t-transparent mx-auto mb-4"></div>
+        <p className="text-bodySmall text-gray-medium">Loading...</p>
+      </Card>
     </main>
   )
 }

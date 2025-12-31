@@ -11,9 +11,10 @@ import { getCampus } from '@/app/actions/profile'
 import { 
   getUserFraternitiesAction, 
   searchFraternitiesAction, 
-  createFraternityAction, 
-  addMemberAction 
+  createFraternityAction,
+  addMemberAction
 } from '@/app/actions/fraternity'
+import { useFraternity } from '@/contexts/FraternityContext'
 import FraternitySelector from '@/components/FraternitySelector'
 import FraternityForm from '@/components/FraternityForm'
 import Card from '@/components/ui/Card'
@@ -21,6 +22,7 @@ import Button from '@/components/ui/Button'
 
 export default function FraternitySelectionPage() {
   const { user, loading: authLoading } = useAuth()
+  const { refreshFraternities } = useFraternity()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [mode, setMode] = useState('select') // 'select' | 'search' | 'create' | 'loading'
@@ -135,16 +137,12 @@ export default function FraternitySelectionPage() {
       }
 
       if (data?.id) {
-        // Successfully created - add user as admin
-        const { error: addError } = await addMemberAction(data.id, user.id, 'admin')
+        // Successfully created - creator is already added as admin by createFraternity function
+        // Refresh fraternity context to include new fraternity before redirecting
+        await refreshFraternities()
         
-        if (addError) {
-          console.error('Failed to add creator as admin:', addError)
-          // Still continue - fraternity was created
-        }
-
-        // Success message would be shown by parent or redirect
-        const returnTo = searchParams.get('returnTo') || '/welcome'
+        // Redirect to home page (which will show dashboard since user is now admin)
+        const returnTo = searchParams.get('returnTo') || '/'
         router.push(returnTo)
       } else {
         setError('Failed to create fraternity')

@@ -117,6 +117,7 @@ export function FraternityProvider({ children }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, authLoading])
 
+
   // Package everything we want to expose to consuming components
   const value = {
     userFraternities,        // Array of user's fraternities

@@ -17,7 +17,7 @@ import Badge from '@/components/ui/Badge'
 export default function FraternityDashboardPage() {
   const params = useParams()
   const router = useRouter()
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, signOut } = useAuth()
   const [fraternity, setFraternity] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -152,6 +152,28 @@ export default function FraternityDashboardPage() {
   return (
     <main className="min-h-screen w-screen bg-white">
       <div className="max-w-md mx-auto px-6 py-12">
+        {/* Header with Back and Sign Out buttons */}
+        <div className="mb-4 flex items-center justify-between">
+          <Button
+            onClick={() => router.push('/')}
+            variant="text"
+            size="medium"
+            className="text-gray-medium hover:text-gray-dark"
+          >
+            ← Back
+          </Button>
+          <Button
+            onClick={async () => {
+              await signOut()
+              router.push('/')
+            }}
+            variant="text"
+            size="medium"
+            className="text-gray-medium hover:text-gray-dark"
+          >
+            Sign Out
+          </Button>
+        </div>
         <Card>
           <div className="space-y-6">
             {/* Header with photo and name */}

@@ -93,10 +93,10 @@ export default function AuthModal({ isOpen, onClose, mode = 'login' }) {
           setSignupStep('profile')
         }
       } else {
-        // Login: Redirect to welcome page after successful login
+        // Login: Redirect to home page after successful login
+        // Home page will show dashboard if admin, or placeholder if not admin
         onClose()
-        // Navigate to welcome page
-        router.push('/welcome')
+        router.push('/')
       }
     } catch (error) {
       // Display any errors from Supabase
@@ -157,10 +157,8 @@ export default function AuthModal({ isOpen, onClose, mode = 'login' }) {
         className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-6"
         onClick={onClose}
       >
-        <Card
-          className="w-full max-w-md relative max-h-[90vh] overflow-y-auto"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md">
+          <Card className="w-full relative max-h-[90vh] overflow-y-auto">
           {/* Close button */}
           <button
             onClick={onClose}
@@ -204,7 +202,8 @@ export default function AuthModal({ isOpen, onClose, mode = 'login' }) {
             loading={profileLoading}
             userId={user?.id}
           />
-        </Card>
+          </Card>
+        </div>
       </div>
     )
   }
@@ -221,10 +220,8 @@ export default function AuthModal({ isOpen, onClose, mode = 'login' }) {
         className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-6"
         onClick={onClose}
       >
-        <Card
-          className="w-full max-w-md relative"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md">
+          <Card className="w-full relative">
           {/* Close button */}
           <button
             onClick={onClose}
@@ -320,7 +317,8 @@ export default function AuthModal({ isOpen, onClose, mode = 'login' }) {
               {loading ? 'Loading...' : isLogin ? 'Log In' : 'Continue'}
             </Button>
           </form>
-        </Card>
+          </Card>
+        </div>
       </div>
 
       {/* Phone verification modal - DISABLED for MVP */}
