@@ -28,7 +28,9 @@ export const useAuth = () => {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null) // Stores current user object
   const [loading, setLoading] = useState(true) // True until initial session check completes
-  const supabase = createClient() // Create Supabase client for browser
+  
+  // Create Supabase client - create it inside useEffect to handle errors properly
+  // Store it in a ref or create it fresh each time
 
   useEffect(() => {
     let mounted = true
@@ -39,21 +41,36 @@ export function AuthProvider({ children }) {
     // Check for missing environment variables
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       console.error('Missing Supabase environment variables. Please check your .env file.')
+      initialCheckComplete = true
       setLoading(false)
       return
     }
 
-    // Set up a timeout to prevent infinite loading (5 seconds max)
+    // Create Supabase client with error handling
+    let supabase
+    try {
+      supabase = createClient()
+    } catch (error) {
+      console.error('Failed to create Supabase client:', error)
+      initialCheckComplete = true
+      setLoading(false)
+      return
+    }
+
+    // Set up a timeout to prevent infinite loading (3 seconds max)
+    // Reduced from 5 seconds to fail faster and prevent stuck loading screens
     timeoutId = setTimeout(() => {
       if (mounted && !initialCheckComplete) {
-        console.warn('Auth session check timed out after 5 seconds, setting loading to false')
+        console.warn('Auth session check timed out after 3 seconds, setting loading to false')
         initialCheckComplete = true
+        setUser(null)
         setLoading(false)
       }
-    }, 5000)
+    }, 3000)
 
     // On mount: Check if user already has an active session
     // This happens when user refreshes page or returns to app
+    // The timeout above ensures we don't wait forever if getSession() hangs
     supabase.auth.getSession()
       .then(({ data: { session }, error }) => {
         if (!mounted || initialCheckComplete) return
@@ -130,6 +147,8 @@ export function AuthProvider({ children }) {
   // Supabase will send a confirmation email by default
   // The edufilter.sql trigger validates .edu emails at the database level
   const signUp = async (email, password, returnTo = null) => {
+    try {
+      const supabase = createClient()
     
     // Capture the current page path to return user after email verification
     // If returnTo is not provided, use current pathname (or '/' as fallback)
@@ -168,27 +187,44 @@ export function AuthProvider({ children }) {
       }
     })
     
-    
     return { data, error }
+    } catch (error) {
+      console.error('Failed to create Supabase client in signUp:', error)
+      return { data: null, error: { message: 'Failed to initialize authentication' } }
+    }
   }
 
   // Sign in existing user with email and password
   const signIn = async (email, password) => {
+    try {
+      const supabase = createClient()
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
     return { data, error }
+    } catch (error) {
+      console.error('Failed to create Supabase client in signIn:', error)
+      return { data: null, error: { message: 'Failed to initialize authentication' } }
+    }
   }
 
   // Sign out current user and clear session
   const signOut = async () => {
+    try {
+      const supabase = createClient()
     const { error } = await supabase.auth.signOut()
     return { error }
+    } catch (error) {
+      console.error('Failed to create Supabase client in signOut:', error)
+      return { error: { message: 'Failed to initialize authentication' } }
+    }
   }
 
   // Resend confirmation email
   const resendConfirmationEmail = async (email, returnTo = null) => {
+    try {
+      const supabase = createClient()
     
     // Capture the current page path to return user after email verification
     let redirectPath = returnTo
@@ -221,11 +257,13 @@ export function AuthProvider({ children }) {
       }
     }
     
-    
     const { data, error } = await supabase.auth.resend(resendOptions)
     
-    
     return { data, error }
+    } catch (error) {
+      console.error('Failed to create Supabase client in resendConfirmationEmail:', error)
+      return { data: null, error: { message: 'Failed to initialize authentication' } }
+    }
   }
 
   // Package everything we want to expose to consuming components

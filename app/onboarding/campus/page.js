@@ -4,14 +4,14 @@
 
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { detectCampus, linkCampus, getCampus, searchSchoolsAction, linkUserToSchoolAction, getSchoolByDomainAction } from '@/app/actions/profile'
 import CampusSelector from '@/components/CampusSelector'
 import Card from '@/components/ui/Card'
 
-export default function CampusSelectionPage() {
+function CampusSelectionPageContent() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -380,6 +380,23 @@ export default function CampusSelectionPage() {
         </Card>
       </div>
     </main>
+  )
+}
+
+export default function CampusSelectionPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="h-screen w-screen bg-white flex items-center justify-center px-6">
+          <Card className="text-center max-w-md w-full">
+            <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary-ui border-t-transparent mx-auto mb-4"></div>
+            <p className="text-bodySmall text-gray-medium">Loading...</p>
+          </Card>
+        </main>
+      }
+    >
+      <CampusSelectionPageContent />
+    </Suspense>
   )
 }
 

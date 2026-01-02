@@ -7,6 +7,9 @@ import { createClient } from '@/lib/supabase/server'
 import { checkProfileComplete } from '@/lib/supabase/users'
 import { NextResponse } from 'next/server'
 
+// This route must be dynamic because it uses request.url and handles OAuth callbacks
+export const dynamic = 'force-dynamic'
+
 export async function GET(request) {
   try {
     const requestUrl = new URL(request.url)

@@ -78,27 +78,57 @@ export function FraternityProvider({ children }) {
   useEffect(() => {
     let mounted = true
     let timeoutId = null
+    let safetyTimeoutId = null
+
+    // Safety timeout: Always resolve loading within 7 seconds total
+    // This prevents infinite loading screens if auth or fetch gets stuck
+    safetyTimeoutId = setTimeout(() => {
+      if (mounted) {
+        console.warn('Fraternity context safety timeout: forcing loading to false after 7 seconds')
+        setLoading(false)
+        setError(null)
+        // If we still don't have fraternities after timeout, clear them
+        if (!userFraternities || userFraternities.length === 0) {
+          setUserFraternities([])
+        }
+      }
+    }, 7000)
 
     // Wait for auth to finish loading before checking user
     // This prevents race conditions where we try to fetch before auth is ready
     if (authLoading) {
-      // Auth is still loading, keep fraternity loading state
-      return
+      // Auth is still loading - wait a bit, but the safety timeout will resolve loading if stuck
+      // Don't return early - let the safety timeout handle it
+      // But if authLoading takes too long (more than 5 seconds), we'll timeout anyway
+      return () => {
+        mounted = false
+        if (safetyTimeoutId) {
+          clearTimeout(safetyTimeoutId)
+        }
+      }
+    }
+
+    // Auth is done loading, clear safety timeout and proceed
+    if (safetyTimeoutId) {
+      clearTimeout(safetyTimeoutId)
+      safetyTimeoutId = null
     }
 
     if (user?.id) {
-      // Set timeout to prevent infinite loading (8 seconds max)
+      // Set timeout to prevent infinite loading (5 seconds max for fetch)
       timeoutId = setTimeout(() => {
         if (mounted) {
-          console.warn('Fraternity fetch timed out after 8 seconds, setting loading to false')
+          console.warn('Fraternity fetch timed out after 5 seconds, setting loading to false')
           setLoading(false)
         }
-      }, 8000)
+      }, 5000)
 
       fetchUserFraternities().finally(() => {
-        if (mounted && timeoutId) {
+        if (mounted) {
+          if (timeoutId) {
           clearTimeout(timeoutId)
           timeoutId = null
+          }
         }
       })
     } else {
@@ -106,12 +136,18 @@ export function FraternityProvider({ children }) {
       setUserFraternities([])
       setLoading(false)
       setError(null)
+      if (safetyTimeoutId) {
+        clearTimeout(safetyTimeoutId)
+      }
     }
 
     return () => {
       mounted = false
       if (timeoutId) {
         clearTimeout(timeoutId)
+      }
+      if (safetyTimeoutId) {
+        clearTimeout(safetyTimeoutId)
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
