@@ -7,6 +7,7 @@ import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { FraternityProvider } from '@/contexts/FraternityContext'
 import LayoutWrapper from '@/components/LayoutWrapper'
+import PWAMetaTags from '@/components/PWAMetaTags'
 
 // Configure Inter font from Google Fonts
 // The variable option creates a CSS custom property we can reference
@@ -19,6 +20,19 @@ const inter = Inter({
 export const metadata = {
   title: 'BidMVP',
   description: 'Mobile bidding interface',
+  manifest: '/manifest.json',
+  themeColor: '#3B82F6',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'BidMVP',
+  },
+  icons: {
+    apple: [
+      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-152x152.png', sizes: '152x152', type: 'image/png' },
+    ],
+  },
 }
 
 // Viewport settings optimized for mobile devices
@@ -34,6 +48,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${inter.variable} font-inter`}>
+        <PWAMetaTags />
         {/* Wrap entire app in AuthProvider so any component can access auth state */}
         <AuthProvider>
           {/* Wrap in FraternityProvider so any component can access fraternity state */}
