@@ -94,7 +94,7 @@ export default function AuthModal({ isOpen, onClose, mode = 'login' }) {
         }
       } else {
         // Login: Redirect to home page after successful login
-        // Home page will show dashboard if admin, or placeholder if not admin
+        // Home page shows events placeholder for all users (admins and non-admins)
         onClose()
         router.push('/')
       }
@@ -136,9 +136,10 @@ export default function AuthModal({ isOpen, onClose, mode = 'login' }) {
       setSuccess(true)
       setSignupStep('email')
       
-      // Close modal after a brief delay
+      // Close modal and redirect to home page after a brief delay
       setTimeout(() => {
         onClose()
+        router.push('/')
       }, 2000)
     } catch (error) {
       setError(error.message || 'Failed to create profile')

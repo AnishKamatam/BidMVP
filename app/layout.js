@@ -21,7 +21,6 @@ export const metadata = {
   title: 'BidMVP',
   description: 'Mobile bidding interface',
   manifest: '/manifest.json',
-  themeColor: '#3B82F6',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -42,6 +41,7 @@ export const viewport = {
   maximumScale: 1,              // Prevent user zoom (app-like behavior)
   userScalable: false,          // Disable pinch-to-zoom
   viewportFit: 'cover',         // Fill notches on modern phones
+  themeColor: '#3B82F6',        // Browser theme color
 }
 
 export default function RootLayout({ children }) {

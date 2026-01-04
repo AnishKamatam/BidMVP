@@ -3,8 +3,8 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useFraternity } from '@/contexts/FraternityContext'
 import { createFraternityAction } from '@/app/actions/fraternity'
@@ -13,8 +13,9 @@ import FraternityForm from '@/components/FraternityForm'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 
-export default function CreateFraternityPage() {
+function CreateFraternityPageContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user, loading: authLoading } = useAuth()
   const { refreshFraternities } = useFraternity()
   const [loading, setLoading] = useState(false)
@@ -137,9 +138,8 @@ export default function CreateFraternityPage() {
       if (data) {
         // Refresh fraternity context to include new fraternity
         await refreshFraternities()
-        // Use replace instead of push to avoid showing home page during transition
-        // This prevents the brief flash of the welcome/signout screen
-        router.replace(`/fraternities/${data.id}`)
+        // Always redirect to fraternities dashboard hub after successful creation
+        router.replace('/fraternities')
       } else {
         setError('Failed to create fraternity')
         setLoading(false)
@@ -237,5 +237,20 @@ export default function CreateFraternityPage() {
         </Card>
       </div>
     </main>
+  )
+}
+
+export default function CreateFraternityPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen w-screen bg-white flex items-center justify-center px-6">
+        <Card className="text-center max-w-md w-full">
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary-ui border-t-transparent mx-auto mb-4"></div>
+          <p className="text-bodySmall text-gray-medium">Loading...</p>
+        </Card>
+      </main>
+    }>
+      <CreateFraternityPageContent />
+    </Suspense>
   )
 }

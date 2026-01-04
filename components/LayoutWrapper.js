@@ -50,11 +50,12 @@ export default function LayoutWrapper({ children }) {
     (userFraternities || []).some(f => f && f.role === 'admin' && f.fraternity)
 
   // Determine if navigation should be visible
+  // Show nav for non-admins, or for admins on the home page (so they can access the app)
   const shouldShowNav =
     !authLoading &&
     !fraternityLoading &&
     user && // User is authenticated
-    !isAdmin && // User is NOT an admin (for now)
+    (!isAdmin || pathname === '/') && // Show nav for non-admins, or for admins on home page
     !pathname?.startsWith('/onboarding') && // Not in onboarding flow
     pathname !== '/fraternities/create' &&
     pathname !== '/fraternities/join'

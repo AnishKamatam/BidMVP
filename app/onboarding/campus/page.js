@@ -232,7 +232,8 @@ function CampusSelectionPageContent() {
       if (data?.school) {
         // Successfully linked
         const returnTo = searchParams.get('returnTo') || '/welcome'
-        router.push(`/onboarding/fraternity?returnTo=${encodeURIComponent(returnTo)}`)
+        const finalReturnTo = returnTo === '/welcome' ? '/' : returnTo
+        router.push(finalReturnTo)
       } else {
         setError('Failed to link campus')
         setLinking(false)
@@ -265,7 +266,8 @@ function CampusSelectionPageContent() {
       if (data?.success) {
         // Successfully linked
         const returnTo = searchParams.get('returnTo') || '/welcome'
-        router.push(`/onboarding/fraternity?returnTo=${encodeURIComponent(returnTo)}`)
+        const finalReturnTo = returnTo === '/welcome' ? '/' : returnTo
+        router.push(finalReturnTo)
       } else {
         setError('Failed to link campus')
         setLinking(false)

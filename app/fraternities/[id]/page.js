@@ -155,7 +155,7 @@ export default function FraternityDashboardPage() {
         {/* Header with Back and Sign Out buttons */}
         <div className="mb-4 flex items-center justify-between">
           <Button
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/fraternities')}
             variant="text"
             size="medium"
             className="text-gray-medium hover:text-gray-dark"
