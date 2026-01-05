@@ -66,13 +66,29 @@ CREATE TABLE IF NOT EXISTS event_revenue (
   user_id TEXT NOT NULL REFERENCES "User"(id) ON DELETE CASCADE,
   type TEXT NOT NULL CHECK (type IN ('line_skip', 'bid', 'priority_pass')),
   amount NUMERIC(10, 2) NOT NULL,
+  stripe_session_id TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Add stripe_session_id column if table already exists (for existing databases)
+ALTER TABLE event_revenue 
+ADD COLUMN IF NOT EXISTS stripe_session_id TEXT;
 
 -- Indexes for revenue queries
 CREATE INDEX IF NOT EXISTS idx_event_revenue_event_id ON event_revenue(event_id);
 CREATE INDEX IF NOT EXISTS idx_event_revenue_type ON event_revenue(type);
 CREATE INDEX IF NOT EXISTS idx_event_revenue_created ON event_revenue(created_at);
+
+-- Index for quick lookups by Stripe session ID (for webhook idempotency)
+CREATE INDEX IF NOT EXISTS idx_event_revenue_stripe_session 
+ON event_revenue(stripe_session_id) 
+WHERE stripe_session_id IS NOT NULL;
+
+-- Unique constraint to prevent duplicate webhook processing
+-- This ensures each Stripe session is only recorded once
+CREATE UNIQUE INDEX IF NOT EXISTS idx_event_revenue_unique_session 
+ON event_revenue(stripe_session_id) 
+WHERE stripe_session_id IS NOT NULL;
 
 -- ============================================
 -- 5. rush_notes table
@@ -103,6 +119,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Drop trigger if it exists, then create it
+DROP TRIGGER IF EXISTS rush_notes_updated_at ON rush_notes;
 CREATE TRIGGER rush_notes_updated_at
   BEFORE UPDATE ON rush_notes
   FOR EACH ROW

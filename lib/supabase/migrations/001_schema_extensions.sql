@@ -53,6 +53,10 @@ ADD COLUMN IF NOT EXISTS qr_code TEXT UNIQUE;
 ALTER TABLE event 
 ADD COLUMN IF NOT EXISTS location TEXT;
 
+-- Add line_skip_price field (optional)
+ALTER TABLE event 
+ADD COLUMN IF NOT EXISTS line_skip_price NUMERIC(10, 2);
+
 -- Add index on event_type for filtering
 CREATE INDEX IF NOT EXISTS idx_event_type ON event(event_type);
 

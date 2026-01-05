@@ -27,6 +27,7 @@ const EventForm = forwardRef(function EventForm({
   const [endTime, setEndTime] = useState(null)
   const [visibility, setVisibility] = useState('public')
   const [bidPrice, setBidPrice] = useState('')
+  const [lineSkipPrice, setLineSkipPrice] = useState('')
   const [location, setLocation] = useState('')
   const [description, setDescription] = useState('')
   const [validationErrors, setValidationErrors] = useState({})
@@ -164,6 +165,15 @@ const EventForm = forwardRef(function EventForm({
       }
     }
 
+    // Line skip price validation (optional, but must be valid if provided)
+    if (lineSkipPrice && lineSkipPrice.trim()) {
+      const trimmedLineSkipPrice = lineSkipPrice.toString().trim()
+      const skipPrice = parseFloat(trimmedLineSkipPrice)
+      if (isNaN(skipPrice) || skipPrice < 0) {
+        errors.line_skip_price = 'Line skip price must be a valid number greater than or equal to 0'
+      }
+    }
+
     // Location validation (optional, but check max length)
     if (location && location.trim().length > 200) {
       errors.location = 'Location must be 200 characters or less'
@@ -209,6 +219,7 @@ const EventForm = forwardRef(function EventForm({
         event_type: eventType,
         visibility: visibility,
         bid_price: parseFloat(bidPrice.trim()),
+        line_skip_price: lineSkipPrice && lineSkipPrice.trim() ? parseFloat(lineSkipPrice.trim()) : null,
         location: location.trim() || null,
         description: description.trim() || null,
         timezone: timezone
@@ -549,6 +560,41 @@ const EventForm = forwardRef(function EventForm({
         {!validationErrors.bid_price && (
           <p className="text-caption text-gray-medium mt-1">
             Enter the bid price for this event
+          </p>
+        )}
+      </div>
+
+      {/* Line Skip Price */}
+      <div>
+        <label className="block text-bodySmall font-semibold mb-2 text-neutral-black">
+          Line Skip Price <span className="text-gray-medium">(Optional)</span>
+        </label>
+        <div className="relative">
+          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-bodySmall text-gray-medium">
+            $
+          </span>
+          <Input
+            type="number"
+            value={lineSkipPrice}
+            onChange={(e) => {
+              setLineSkipPrice(e.target.value)
+              if (validationErrors.line_skip_price) {
+                setValidationErrors({ ...validationErrors, line_skip_price: null })
+              }
+            }}
+            placeholder="0.00"
+            error={validationErrors.line_skip_price}
+            min="0"
+            step="0.01"
+            className="pl-8"
+          />
+        </div>
+        {validationErrors.line_skip_price && (
+          <p className="text-bodySmall text-error mt-1">{validationErrors.line_skip_price}</p>
+        )}
+        {!validationErrors.line_skip_price && (
+          <p className="text-caption text-gray-medium mt-1">
+            Price for users to skip the line at this event
           </p>
         )}
       </div>
