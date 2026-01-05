@@ -113,9 +113,26 @@ WHERE domain IN (
 -- Check current role (should be 'postgres' for migrations)
 SELECT current_user, session_user;
 
+-- IMPORTANT: Check if Berkeley needs to be updated
+-- This query shows what will happen to berkeley.edu
+SELECT 
+  domain,
+  name as current_name,
+  'University of California, Berkeley' as expected_name,
+  CASE 
+    WHEN name = 'University of California, Berkeley' THEN 'Already correct'
+    WHEN name IS NOT NULL THEN 'Will be updated'
+    ELSE 'Will be added'
+  END as action
+FROM school
+WHERE domain = 'berkeley.edu';
+
 -- ============================================
 -- MIGRATION: Add test schools
 -- ============================================
+-- Temporarily drop the trigger to avoid updated_at column errors
+-- (The trigger will be recreated at the end if the column exists)
+DROP TRIGGER IF EXISTS school_updated_at ON school;
 
 DO $$
 DECLARE
@@ -154,6 +171,8 @@ DECLARE
   school_item TEXT[];
   existing_id TEXT;
   existing_name TEXT;
+  old_name TEXT;
+  new_name TEXT;
   added_count INTEGER := 0;
   updated_count INTEGER := 0;
   skipped_count INTEGER := 0;
@@ -176,11 +195,26 @@ BEGIN
         RAISE NOTICE 'Added: % (%)', school_item[1], school_item[2];
       ELSIF existing_name IS DISTINCT FROM school_item[1] THEN
         -- School exists but name doesn't match - update it to ensure consistency
+        -- Store old name before update for logging
+        old_name := existing_name;
+        RAISE NOTICE 'Detected name mismatch for %: current="%", expected="%"', 
+          school_item[2], old_name, school_item[1];
+        
+        -- Perform the update
         UPDATE school
         SET name = school_item[1]
         WHERE id = existing_id;
-        updated_count := updated_count + 1;
-        RAISE NOTICE 'Updated: % (%) [was: %]', school_item[1], school_item[2], existing_name;
+        
+        -- Verify the update worked by reading back the value
+        SELECT name INTO new_name FROM school WHERE id = existing_id;
+        IF new_name = school_item[1] THEN
+          updated_count := updated_count + 1;
+          RAISE NOTICE 'Successfully updated: % (%) [was: %]', school_item[1], school_item[2], old_name;
+        ELSE
+          RAISE WARNING 'Update failed for %: still shows "%" instead of "%"', 
+            school_item[2], new_name, school_item[1];
+          error_count := error_count + 1;
+        END IF;
       ELSE
         -- School exists with correct name - skip
         skipped_count := skipped_count + 1;
@@ -214,6 +248,100 @@ END $$;
 
 -- Explicitly commit the transaction (DO blocks auto-commit, but this ensures it)
 -- Note: In Supabase SQL Editor, you may need to refresh the table view to see changes
+
+-- ============================================
+-- DIRECT UPDATES: Ensure name corrections are applied
+-- ============================================
+-- These direct UPDATE statements ensure name corrections happen even if DO block had issues
+-- Run these after the DO block to fix any remaining name mismatches
+
+-- Temporarily drop the trigger that's causing issues (if updated_at column doesn't exist)
+-- The trigger tries to update updated_at but the column might not exist
+DROP TRIGGER IF EXISTS school_updated_at ON school;
+
+-- Check current Berkeley name before update
+SELECT 'BEFORE UPDATE' as status, name, domain FROM school WHERE domain = 'berkeley.edu';
+
+-- Fix Berkeley with explicit WHERE clause
+-- Using a simple approach: update if name doesn't match exactly
+DO $$
+DECLARE
+  rows_updated INTEGER;
+BEGIN
+  UPDATE school
+  SET name = 'University of California, Berkeley'
+  WHERE domain = 'berkeley.edu' 
+    AND name IS DISTINCT FROM 'University of California, Berkeley';
+  
+  GET DIAGNOSTICS rows_updated = ROW_COUNT;
+  
+  IF rows_updated > 0 THEN
+    RAISE NOTICE 'Updated % row(s) for berkeley.edu', rows_updated;
+  ELSE
+    RAISE NOTICE 'No rows updated for berkeley.edu (may already be correct or not found)';
+  END IF;
+END $$;
+
+-- Verify Berkeley was updated
+SELECT 'AFTER UPDATE' as status, name, domain FROM school WHERE domain = 'berkeley.edu';
+
+-- Ensure updated_at column exists (add it if missing)
+DO $$
+BEGIN
+  -- Check if updated_at column exists, add it if not
+  IF NOT EXISTS (
+    SELECT 1 
+    FROM information_schema.columns 
+    WHERE table_schema = 'public'
+    AND table_name = 'school' 
+    AND column_name = 'updated_at'
+  ) THEN
+    ALTER TABLE school ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+    RAISE NOTICE 'Added missing updated_at column to school table';
+  END IF;
+END $$;
+
+-- Recreate the trigger function and trigger
+CREATE OR REPLACE FUNCTION update_school_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = CURRENT_TIMESTAMP;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Recreate the trigger
+CREATE TRIGGER school_updated_at
+  BEFORE UPDATE ON school
+  FOR EACH ROW
+  EXECUTE FUNCTION update_school_updated_at();
+
+-- ============================================
+-- SIMPLE DIRECT UPDATE (if DO block above didn't work)
+-- ============================================
+-- This is the simplest possible UPDATE - just run this if nothing else works
+UPDATE school
+SET name = 'University of California, Berkeley'
+WHERE domain = 'berkeley.edu';
+
+-- Verify it worked
+SELECT name, domain, 
+  CASE 
+    WHEN name = 'University of California, Berkeley' THEN '✓ SUCCESS'
+    ELSE '✗ FAILED'
+  END as result
+FROM school 
+WHERE domain = 'berkeley.edu';
+
+UPDATE school
+SET name = 'University of California, Los Angeles'
+WHERE domain = 'ucla.edu' 
+  AND (name IS NULL OR name != 'University of California, Los Angeles');
+
+UPDATE school
+SET name = 'University of Southern California'
+WHERE domain = 'usc.edu' 
+  AND (name IS NULL OR name != 'University of Southern California');
 
 -- ============================================
 -- POST-MIGRATION DIAGNOSTICS
@@ -254,4 +382,56 @@ ORDER BY domain;
 
 -- IMPORTANT: After running this migration, refresh your table view in Supabase Table Editor
 -- The changes are committed, but you may need to refresh to see them in the UI
+
+-- ============================================
+-- QUICK VERIFICATION: Check Berkeley specifically
+-- ============================================
+-- Run this query separately if you want to verify Berkeley was updated correctly
+SELECT 
+  id,
+  name,
+  domain,
+  created_at,
+  CASE 
+    WHEN name = 'University of California, Berkeley' THEN '✓ CORRECT'
+    WHEN name = 'Berkeley University' THEN '✗ INCORRECT - Run migration to fix'
+    ELSE '⚠ UNEXPECTED NAME'
+  END as status
+FROM school
+WHERE domain = 'berkeley.edu';
+
+-- ============================================
+-- DIRECT FIX: Run these UPDATE statements directly
+-- ============================================
+-- If the DO block above didn't work, run these UPDATE statements directly
+-- They will fix name mismatches for common schools
+
+-- Fix Berkeley
+UPDATE school
+SET name = 'University of California, Berkeley'
+WHERE domain = 'berkeley.edu' 
+  AND name != 'University of California, Berkeley';
+
+-- Fix UCLA
+UPDATE school
+SET name = 'University of California, Los Angeles'
+WHERE domain = 'ucla.edu' 
+  AND name != 'University of California, Los Angeles';
+
+-- Fix USC
+UPDATE school
+SET name = 'University of Southern California'
+WHERE domain = 'usc.edu' 
+  AND name != 'University of Southern California';
+
+-- Verify Berkeley was updated
+SELECT 
+  name,
+  domain,
+  CASE 
+    WHEN name = 'University of California, Berkeley' THEN '✓ CORRECT'
+    ELSE '✗ STILL INCORRECT'
+  END as status
+FROM school
+WHERE domain = 'berkeley.edu';
 
