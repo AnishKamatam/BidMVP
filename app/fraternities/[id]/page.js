@@ -292,6 +292,14 @@ export default function FraternityDashboardPage() {
                             </p>
                           </div>
                         )}
+                        <Button
+                          onClick={() => router.push(`/fraternities/${fraternityId}/events/guests`)}
+                          variant="secondary"
+                          size="large"
+                          className="w-full"
+                        >
+                          Manage Guest Lists
+                        </Button>
                       </div>
                     )}
                   </>
