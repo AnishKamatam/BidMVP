@@ -15,7 +15,6 @@ import FraternityRequiredModal from '@/components/FraternityRequiredModal'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import { XMarkIcon as XIcon } from '@heroicons/react/24/outline'
-import { CheckIcon } from '@heroicons/react/24/outline'
 
 export default function CreateEventPage() {
   const router = useRouter()
