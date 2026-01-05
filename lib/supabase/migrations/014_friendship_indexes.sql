@@ -52,35 +52,87 @@ SET search_path = public
 AS $$
 BEGIN
   RETURN QUERY
-  SELECT DISTINCT 
-    other_user.id as user_id,
-    other_user.name,
-    other_user.profile_pic,
-    other_user.year,
-    COUNT(DISTINCT shared_events.event_id)::BIGINT as shared_events_count,
-    NULL::TIMESTAMP as last_event_date,
-    (other_user.school_id = p_user_school_id) as is_same_school
-  FROM checkin user_checkins
-  JOIN checkin other_checkins ON user_checkins.event_id = other_checkins.event_id
-  JOIN "User" other_user ON other_checkins.user_id = other_user.id
-  LEFT JOIN checkin shared_events ON (
-    shared_events.user_id = p_user_id 
-    AND shared_events.event_id = other_checkins.event_id
-    AND (shared_events.is_checked_in = TRUE OR shared_events.checked_out_at IS NULL)
-  )
-  WHERE user_checkins.user_id = p_user_id
-    AND other_checkins.user_id != p_user_id
-    AND (other_checkins.is_checked_in = TRUE OR other_checkins.checked_out_at IS NULL)
-    AND NOT EXISTS (
-      SELECT 1 FROM friendship 
-      WHERE (friendship.user_id = p_user_id AND friendship.friend_id = other_user.id)
-         OR (friendship.user_id = other_user.id AND friendship.friend_id = p_user_id)
+  WITH 
+  -- Get all users from same school (excluding self, existing friendships)
+  same_school_users AS (
+    SELECT DISTINCT
+      u.id as user_id,
+      u.name,
+      u.profile_pic,
+      u.year,
+      0::BIGINT as shared_events_count,
+      NULL::TIMESTAMP as last_event_date,
+      TRUE as is_same_school
+    FROM "User" u
+    WHERE u.school_id = p_user_school_id
+      AND u.id != p_user_id
+      AND p_user_school_id IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM friendship 
+        WHERE (friendship.user_id = p_user_id AND friendship.friend_id = u.id)
+           OR (friendship.user_id = u.id AND friendship.friend_id = p_user_id)
+      )
+  ),
+  -- Get users who attended same events (existing logic)
+  event_based_users AS (
+    SELECT DISTINCT 
+      other_user.id as user_id,
+      other_user.name,
+      other_user.profile_pic,
+      other_user.year,
+      COUNT(DISTINCT shared_events.event_id)::BIGINT as shared_events_count,
+      NULL::TIMESTAMP as last_event_date,
+      (other_user.school_id = p_user_school_id) as is_same_school
+    FROM checkin user_checkins
+    JOIN checkin other_checkins ON user_checkins.event_id = other_checkins.event_id
+    JOIN "User" other_user ON other_checkins.user_id = other_user.id
+    LEFT JOIN checkin shared_events ON (
+      shared_events.user_id = p_user_id 
+      AND shared_events.event_id = other_checkins.event_id
+      AND (shared_events.is_checked_in = TRUE OR shared_events.checked_out_at IS NULL)
     )
-    -- Filter by school if p_include_cross_school is false
-    AND (p_include_cross_school = TRUE OR other_user.school_id = p_user_school_id OR p_user_school_id IS NULL)
-  GROUP BY other_user.id, other_user.name, other_user.profile_pic, other_user.year, other_user.school_id
-  -- Prioritize same-school users, then sort by shared events count
-  ORDER BY is_same_school DESC, shared_events_count DESC, last_event_date DESC
+    WHERE user_checkins.user_id = p_user_id
+      AND other_checkins.user_id != p_user_id
+      AND (other_checkins.is_checked_in = TRUE OR other_checkins.checked_out_at IS NULL)
+      AND NOT EXISTS (
+        SELECT 1 FROM friendship 
+        WHERE (friendship.user_id = p_user_id AND friendship.friend_id = other_user.id)
+           OR (friendship.user_id = other_user.id AND friendship.friend_id = p_user_id)
+      )
+      -- Filter by school if p_include_cross_school is false
+      AND (p_include_cross_school = TRUE OR other_user.school_id = p_user_school_id OR p_user_school_id IS NULL)
+    GROUP BY other_user.id, other_user.name, other_user.profile_pic, other_user.year, other_user.school_id
+  ),
+  -- Combine: use UNION to merge, then use DISTINCT ON to deduplicate (prefer event-based counts)
+  all_users AS (
+    SELECT * FROM event_based_users
+    UNION
+    SELECT * FROM same_school_users
+  ),
+  -- Deduplicate: prefer rows with higher event counts (event-based over same-school only)
+  unique_users AS (
+    SELECT DISTINCT ON (user_id)
+      user_id,
+      name,
+      profile_pic,
+      year,
+      shared_events_count,
+      last_event_date,
+      is_same_school
+    FROM all_users
+    ORDER BY user_id, shared_events_count DESC, is_same_school DESC
+  )
+  SELECT 
+    user_id,
+    name,
+    profile_pic,
+    year,
+    shared_events_count,
+    last_event_date,
+    is_same_school
+  FROM unique_users
+  -- Prioritize same-school users, then by shared events count
+  ORDER BY is_same_school DESC, shared_events_count DESC, last_event_date DESC NULLS LAST
   LIMIT p_limit;
 END;
 $$;
@@ -96,8 +148,11 @@ $$;
 --
 -- The get_people_you_met function:
 --   - Bypasses RLS with SECURITY DEFINER (needed to query checkin data)
---   - Returns users who attended same events as the requesting user
+--   - Returns users from same school (even without shared events) AND users who attended same events
+--   - Includes users from the same school even if no shared events exist
+--   - Deduplicates results (event-based data takes precedence when user appears in both)
+--   - Prioritizes same-school users first, then by shared events count
 --   - Excludes existing friends, pending requests, and blocked users
---   - Ranks by shared event count and recency
+--   - Respects p_include_cross_school parameter for event-based suggestions
 --   - Can be called from application code for better performance
 
