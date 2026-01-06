@@ -18,6 +18,7 @@ import FraternitySelector from '@/components/FraternitySelector'
 import FraternityForm from '@/components/FraternityForm'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 
 function JoinFraternityPageContent() {
   const { user, loading: authLoading } = useAuth()
@@ -194,6 +195,18 @@ function JoinFraternityPageContent() {
     return (
       <main className="min-h-screen w-screen bg-white">
         <div className="max-w-md mx-auto px-6 py-12">
+          {/* Header with Back button */}
+          <div className="mb-4">
+            <Button
+              onClick={() => router.push('/profile')}
+              variant="text"
+              size="medium"
+              className="p-2 text-gray-medium hover:text-gray-dark"
+            >
+              <ArrowLeftIcon className="w-6 h-6" />
+            </Button>
+          </div>
+
           <Card>
             <div className="mb-6">
               <h1 className="text-heading1 text-neutral-black mb-2">

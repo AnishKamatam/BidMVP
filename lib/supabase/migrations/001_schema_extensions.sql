@@ -57,6 +57,15 @@ ADD COLUMN IF NOT EXISTS location TEXT;
 ALTER TABLE event 
 ADD COLUMN IF NOT EXISTS line_skip_price NUMERIC(10, 2);
 
+-- Add updated_at column for tracking when events are modified
+ALTER TABLE event 
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+-- Set updated_at for existing events (if any) to their created_at or current timestamp
+UPDATE event 
+SET updated_at = COALESCE(created_at, CURRENT_TIMESTAMP)
+WHERE updated_at IS NULL;
+
 -- Add index on event_type for filtering
 CREATE INDEX IF NOT EXISTS idx_event_type ON event(event_type);
 
@@ -112,9 +121,32 @@ CREATE INDEX IF NOT EXISTS idx_checkin_is_checked_in ON checkin(is_checked_in) W
 CREATE INDEX IF NOT EXISTS idx_checkin_event_checked ON checkin(event_id, is_checked_in);
 
 -- ============================================
+-- 5. Event updated_at trigger
+-- ============================================
+
+-- Function to automatically update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_event_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = CURRENT_TIMESTAMP;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Drop existing trigger if it exists
+DROP TRIGGER IF EXISTS event_updated_at ON event;
+
+-- Create trigger that fires before UPDATE
+CREATE TRIGGER event_updated_at
+BEFORE UPDATE ON event
+FOR EACH ROW
+EXECUTE FUNCTION update_event_updated_at();
+
+-- ============================================
 -- Comments for reference
 -- ============================================
 -- All columns are added with IF NOT EXISTS to prevent errors if run multiple times
 -- All new columns are nullable (except where defaults are set) to avoid breaking existing data
 -- Indexes are added for performance on commonly queried fields
+-- The updated_at trigger automatically updates the timestamp whenever an event is modified
 

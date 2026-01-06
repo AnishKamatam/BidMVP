@@ -214,8 +214,8 @@ const EventForm = forwardRef(function EventForm({
       const eventData = {
         frat_id: selectedFratId,
         title: title.trim(),
-        date: date, // Already ISO 8601 TIMESTAMP from DateTimePicker
-        end_time: endTime || null, // Already ISO 8601 TIMESTAMP from DateTimePicker
+        date: date, // Local time string (YYYY-MM-DDTHH:MM:SS) from DateTimePicker
+        end_time: endTime || null, // Local time string (YYYY-MM-DDTHH:MM:SS) from DateTimePicker
         event_type: eventType,
         visibility: visibility,
         bid_price: parseFloat(bidPrice.trim()),
