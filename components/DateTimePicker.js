@@ -106,7 +106,9 @@ export default function DateTimePicker({
     }
   }
 
-  // Combine date and time into ISO string
+  // Combine date and time into local timezone string (not UTC)
+  // IMPORTANT: We store the time as the user entered it in their local timezone
+  // Format: "YYYY-MM-DDTHH:MM:SS" (without timezone indicator)
   const combineDateTime = (dateStr, timeStr) => {
     if (type === 'time') {
       // For time-only mode, use baseDate
@@ -114,25 +116,35 @@ export default function DateTimePicker({
       if (!timeStr) return null
       const base = new Date(baseDate)
       const [hours, minutes] = timeStr.split(':').map(Number)
+      // Set hours/minutes in local timezone
       base.setHours(hours || 0, minutes || 0, 0, 0)
-      return base.toISOString()
+      // Format as local time string (YYYY-MM-DDTHH:MM:SS)
+      const year = base.getFullYear()
+      const month = String(base.getMonth() + 1).padStart(2, '0')
+      const day = String(base.getDate()).padStart(2, '0')
+      const h = String(base.getHours()).padStart(2, '0')
+      const m = String(base.getMinutes()).padStart(2, '0')
+      const s = String(base.getSeconds()).padStart(2, '0')
+      return `${year}-${month}-${day}T${h}:${m}:${s}`
     }
     if (type === 'date') {
-      // Date only
+      // Date only - create at midnight local time
       if (!dateStr) return null
-      const date = new Date(`${dateStr}T00:00:00`)
-      return date.toISOString()
+      // Return as local time string (YYYY-MM-DDTHH:MM:SS)
+      return `${dateStr}T00:00:00`
     }
     // DateTime mode
     if (!dateStr) return null
     if (!timeStr) {
-      // If no time, use midnight
-      const dateTime = new Date(`${dateStr}T00:00:00`)
-      return dateTime.toISOString()
+      // If no time, use midnight local time
+      return `${dateStr}T00:00:00`
     }
-    // Combine date and time
-    const dateTime = new Date(`${dateStr}T${timeStr}`)
-    return dateTime.toISOString()
+    // Combine date and time - format as local time string
+    // Format: "YYYY-MM-DDTHH:MM:SS" (no timezone conversion)
+    const [hours, minutes] = timeStr.split(':').map(Number)
+    const h = String(hours || 0).padStart(2, '0')
+    const m = String(minutes || 0).padStart(2, '0')
+    return `${dateStr}T${h}:${m}:00`
   }
 
   // Handle date change

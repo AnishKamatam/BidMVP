@@ -149,14 +149,25 @@ export default function FraternityEventsGuestsPage() {
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Date TBD'
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    })
+    try {
+      // Parse the ISO string - JavaScript automatically handles UTC to local conversion
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return 'Invalid Date'
+      
+      // Use toLocaleString to ensure proper timezone conversion
+      // This will display the date/time in the user's local timezone
+      return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Explicitly use user's timezone
+      })
+    } catch (e) {
+      return 'Invalid Date'
+    }
   }
 
   if (authLoading || loading) {

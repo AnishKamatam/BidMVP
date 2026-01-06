@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { useFraternity } from '@/contexts/FraternityContext'
 import { getProfile } from '@/app/actions/profile'
 import Avatar from '@/components/ui/Avatar'
 import Button from '@/components/ui/Button'
@@ -14,6 +15,7 @@ import Card from '@/components/ui/Card'
 
 export default function ProfilePage() {
   const { user, loading: authLoading, signOut } = useAuth()
+  const { userFraternities, loading: fraternityLoading } = useFraternity()
   const router = useRouter()
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -47,7 +49,7 @@ export default function ProfilePage() {
     loadProfile()
   }, [user, authLoading, router])
 
-  if (authLoading || loading) {
+  if (authLoading || loading || fraternityLoading) {
     return (
       <main className="min-h-screen w-screen bg-white flex items-center justify-center">
         <Card className="text-center">
@@ -58,23 +60,19 @@ export default function ProfilePage() {
     )
   }
 
+  // Filter to admin fraternities only
+  // userFraternities structure: [{ fraternity: {...}, role: 'admin' }, ...]
+  const adminFraternities = userFraternities?.filter(frat => frat.role === 'admin') || []
+
   if (!user) {
     return null
   }
 
   return (
     <main className="min-h-screen w-screen bg-white">
-      <div className="max-w-md mx-auto px-6 py-12 pb-24">
-        {/* Header with Back button */}
-        <div className="mb-6 flex items-center justify-between">
-          <Button
-            onClick={() => router.push('/')}
-            variant="text"
-            size="medium"
-            className="text-gray-medium hover:text-gray-dark"
-          >
-            ← Back
-          </Button>
+      <div className="max-w-md mx-auto px-6 py-12 pb-[calc(3.5rem+max(0.5rem,env(safe-area-inset-bottom)))]">
+        {/* Header */}
+        <div className="mb-6 flex items-center justify-end">
           <Button
             onClick={async () => {
               await signOut()
@@ -114,6 +112,59 @@ export default function ProfilePage() {
           {error && (
             <div className="mb-6 p-4 bg-red-50 border-2 border-error text-error rounded-md">
               {error}
+            </div>
+          )}
+
+          {/* Admin Fraternities Section */}
+          {adminFraternities.length > 0 && (
+            <div className="mb-6 pt-6 border-t border-gray-border">
+              <h2 className="text-heading3 text-neutral-black mb-3">
+                My Fraternities
+              </h2>
+              <div className="space-y-2">
+                {adminFraternities.map((frat) => {
+                  const fraternityId = frat.fraternity?.id || frat.id
+                  const fraternityName = frat.fraternity?.name || frat.name
+                  const fraternityPhoto = frat.fraternity?.photo_url || null
+                  
+                  return (
+                    <button
+                      key={fraternityId}
+                      onClick={() => router.push(`/fraternities/${fraternityId}`)}
+                      className="w-full p-3 border-2 border-gray-border rounded-lg hover:border-primary-ui hover:bg-gray-light transition-all text-left flex items-center gap-3"
+                    >
+                      {fraternityPhoto && (
+                        <Avatar
+                          src={fraternityPhoto}
+                          alt={fraternityName}
+                          size="medium"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-bodySmall font-semibold text-neutral-black truncate">
+                          {fraternityName}
+                        </p>
+                        <p className="text-caption text-gray-medium">
+                          Admin Dashboard
+                        </p>
+                      </div>
+                      <svg
+                        className="w-5 h-5 text-gray-medium flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           )}
 
