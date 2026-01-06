@@ -174,8 +174,10 @@ const EventForm = forwardRef(function EventForm({
       }
     }
 
-    // Location validation (optional, but check max length)
-    if (location && location.trim().length > 200) {
+    // Location validation (REQUIRED for automatic check-out)
+    if (!location || !location.trim()) {
+      errors.location = 'Location is required for automatic check-out'
+    } else if (location.trim().length > 200) {
       errors.location = 'Location must be 200 characters or less'
     }
 
@@ -602,7 +604,7 @@ const EventForm = forwardRef(function EventForm({
       {/* Location */}
       <div>
         <label className="block text-bodySmall font-semibold mb-2 text-neutral-black">
-          Location <span className="text-gray-medium">(Optional)</span>
+          Location <span className="text-error">*</span>
         </label>
         <Input
           type="text"
@@ -613,13 +615,14 @@ const EventForm = forwardRef(function EventForm({
               setValidationErrors({ ...validationErrors, location: null })
             }
           }}
-          placeholder="e.g., 123 Main St, City, State"
+          placeholder="Event address (required for automatic check-out)"
           error={validationErrors.location}
           maxLength={200}
+          required
         />
         {!validationErrors.location && (
           <p className="text-caption text-gray-medium mt-1">
-            {location.length}/200 characters
+            {location.length}/200 characters - Enter event address (e.g., '123 Main St, Berkeley, CA') for automatic check-out
           </p>
         )}
       </div>
