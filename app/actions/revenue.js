@@ -98,3 +98,35 @@ export async function createStripeCheckoutSessionAction(
   return await createStripeCheckoutSession(eventId, userId, amount, lineItemDescription, paymentType)
 }
 
+/**
+ * Check if the current user has purchased a bid for an event
+ * @param {string} eventId - Event ID
+ * @returns {Promise<{data: {hasPurchased: boolean}|null, error: object|null}>}
+ */
+export async function checkUserBidPurchaseAction(eventId) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return { data: null, error: { message: 'Not authenticated' } }
+  }
+  
+  try {
+    const supabase = await createClient()
+    
+    const { data, error } = await supabase
+      .from('event_revenue')
+      .select('id')
+      .eq('event_id', eventId)
+      .eq('user_id', userId)
+      .eq('type', 'bid')
+      .maybeSingle()
+    
+    if (error) {
+      return { data: null, error: { message: error.message || 'Failed to check bid purchase status' } }
+    }
+    
+    return { data: { hasPurchased: !!data }, error: null }
+  } catch (error) {
+    return { data: null, error: { message: error.message || 'Failed to check bid purchase status' } }
+  }
+}
+

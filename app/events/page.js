@@ -4,23 +4,27 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { getCampusEventsAction } from '@/app/actions/events'
 // For development/testing: can switch to mock data
 // import { mockGetCampusEvents } from '@/lib/mocks/eventFeedData'
 import EventCard from '@/components/EventCard'
 import EventFilters from '@/components/EventFilters'
+import PaymentSuccessModal from '@/components/PaymentSuccessModal'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 
 export default function EventsPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user, loading: authLoading } = useAuth()
   
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [paymentInfo, setPaymentInfo] = useState(null)
   const [filters, setFilters] = useState({
     event_type: null,  // null = all types
     visibility: null,  // null = all visibility
@@ -89,6 +93,20 @@ export default function EventsPage() {
       router.push('/')
     }
   }, [authLoading, user, router])
+
+  // Check payment success/cancel from URL params
+  useEffect(() => {
+    const payment = searchParams.get('payment')
+    const paymentType = searchParams.get('payment_type')
+    const amount = searchParams.get('amount')
+
+    if (payment === 'success' && paymentType && amount) {
+      setPaymentInfo({ type: paymentType, amount: parseFloat(amount) })
+      setShowPaymentModal(true)
+      // Clean URL
+      router.replace('/events', { scroll: false })
+    }
+  }, [searchParams, router])
 
   // Show loading state
   if (authLoading) {
@@ -198,6 +216,17 @@ export default function EventsPage() {
           </div>
         )}
       </div>
+
+      {/* Payment Success Modal */}
+      <PaymentSuccessModal
+        isOpen={showPaymentModal}
+        onClose={() => {
+          setShowPaymentModal(false)
+          setPaymentInfo(null)
+        }}
+        paymentType={paymentInfo?.type || 'bid'}
+        amount={paymentInfo?.amount}
+      />
     </main>
   )
 }

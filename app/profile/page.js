@@ -21,6 +21,14 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  // Filter to admin fraternities only (memoized to avoid re-filtering on every render)
+  // userFraternities structure: [{ fraternity: {...}, role: 'admin' }, ...]
+  // IMPORTANT: This hook must be called before any conditional returns to maintain hook order
+  const adminFraternities = useMemo(
+    () => userFraternities?.filter(frat => frat.role === 'admin') || [],
+    [userFraternities]
+  )
+
   useEffect(() => {
     if (authLoading) return
 
@@ -59,13 +67,6 @@ export default function ProfilePage() {
       </main>
     )
   }
-
-  // Filter to admin fraternities only (memoized to avoid re-filtering on every render)
-  // userFraternities structure: [{ fraternity: {...}, role: 'admin' }, ...]
-  const adminFraternities = useMemo(
-    () => userFraternities?.filter(frat => frat.role === 'admin') || [],
-    [userFraternities]
-  )
 
   if (!user) {
     return null

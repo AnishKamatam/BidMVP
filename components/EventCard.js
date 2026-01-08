@@ -7,8 +7,6 @@ import { useRouter } from 'next/navigation'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Avatar from '@/components/ui/Avatar'
-import Button from '@/components/ui/Button'
-import BidPurchaseButton from '@/components/BidPurchaseButton'
 import { formatEventDate } from '@/lib/utils/dateFormatting'
 
 /**
@@ -38,13 +36,18 @@ export default function EventCard({ event, onClick, variant = 'default' }) {
     return null
   }
 
-  const handleCardClick = () => {
+  const handleCardClick = (e) => {
+    // Prevent navigation if clicking on interactive elements
+    if (e.target.closest('button') || e.target.closest('a') || e.target.closest('[role="button"]')) {
+      e.stopPropagation()
+      return
+    }
+
     if (onClick) {
       onClick()
-    } else {
-      // Navigate to event detail page (future implementation)
-      router.push(`/events/${event.id}`)
     }
+    // Navigate to event details page
+    router.push(`/events/${event.id}`)
   }
 
   // Get event type label
@@ -93,10 +96,11 @@ export default function EventCard({ event, onClick, variant = 'default' }) {
   const isCompact = variant === 'compact'
 
   return (
-    <Card 
+    <div 
       className="mb-4 cursor-pointer"
       onClick={handleCardClick}
     >
+      <Card>
       <div className={`space-y-3 ${isCompact ? 'space-y-2' : ''}`}>
         {/* Event Image */}
         {event.image_url && (
@@ -110,9 +114,11 @@ export default function EventCard({ event, onClick, variant = 'default' }) {
         )}
 
         {/* Header: Fraternity Info and Badges */}
+        {/* Always prioritize fraternity name when available - never show admin/creator info */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            {event.fraternity && (
+            {/* Only display fraternity information - fraternity name is the primary identifier */}
+            {event.fraternity && event.fraternity.name && (
               <>
                 <Avatar
                   src={event.fraternity.photo_url}
@@ -177,25 +183,20 @@ export default function EventCard({ event, onClick, variant = 'default' }) {
           </p>
         )}
 
-        {/* Bid Purchase Button */}
+        {/* Price Indicator (for events with bid price) - Buy Bid button is on details page */}
         {event.bid_price > 0 && (
           <div className="pt-2 border-t border-gray-light">
-            <BidPurchaseButton
-              eventId={event.id}
-              event={event}
-              variant="button"
-              onSuccess={() => {
-                // Refresh or navigate on success
-                window.location.reload()
-              }}
-              onError={(error) => {
-                console.error('Bid purchase error:', error)
-              }}
-            />
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-medium">Bid Price</span>
+              <span className="text-base font-semibold text-primary-ui">
+                ${event.bid_price.toFixed(2)}
+              </span>
+            </div>
           </div>
         )}
       </div>
-    </Card>
+      </Card>
+    </div>
   )
 }
 
