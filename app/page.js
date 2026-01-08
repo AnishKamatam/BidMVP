@@ -5,7 +5,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import AuthModal from '@/components/AuthModal'
 import Button from '@/components/ui/Button'
@@ -20,6 +20,13 @@ export default function Home() {
   // Get current user from auth context
   const { user, loading: authLoading, signOut } = useAuth()
   const router = useRouter()
+
+  // Redirect logged-in users to events page
+  useEffect(() => {
+    if (user && !authLoading) {
+      router.push('/events')
+    }
+  }, [user, authLoading, router])
   
   // Show loading state while checking auth
   if (authLoading) {
@@ -46,30 +53,19 @@ export default function Home() {
 
   return (
     <main className="h-screen w-screen bg-white flex flex-col">
-      {/* Center area - Events placeholder for all logged-in users */}
-      {/* Add bottom padding when nav is visible (3.5rem nav height + safe area) */}
+      {/* Center area - Login/Signup for logged-out users */}
       <div className="flex-1 overflow-y-auto px-6 py-8 pb-[calc(3.5rem+max(0.5rem,env(safe-area-inset-bottom)))]">
-        {/* Show events placeholder for all logged-in users */}
-        {user ? (
+        {/* Show welcome message for logged-out users */}
+        {!user && !authLoading && (
           <div className="flex items-center justify-center min-h-[60vh]">
             <Card className="text-center max-w-md w-full">
+              <h1 className="text-2xl font-bold text-gray-dark mb-4">Welcome to BidMVP</h1>
               <p className="text-bodySmall text-gray-medium mb-6">
-                Welcome! Events feed coming soon.
+                Connect with your campus community and discover events near you.
               </p>
-              <Button
-                onClick={async () => {
-                  await signOut()
-                  router.push('/')
-                }}
-                variant="secondary"
-                size="large"
-                className="w-full"
-              >
-                Sign Out
-              </Button>
             </Card>
           </div>
-        ) : null}
+        )}
       </div>
       
       {/* Bottom buttons - only show when not logged in */}

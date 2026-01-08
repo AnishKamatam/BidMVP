@@ -4,7 +4,7 @@
 
 'use server'
 
-import { createEvent, getEvent, updateEvent, deleteEvent } from '@/lib/supabase/events'
+import { createEvent, getEvent, updateEvent, deleteEvent, getCampusEvents } from '@/lib/supabase/events'
 import { uploadEventImage } from '@/lib/storage/upload'
 import { createClient } from '@/lib/supabase/server'
 
@@ -111,5 +111,30 @@ export async function uploadEventImageAction(eventId, formData, userId = null) {
       }
     }
   }
+}
+
+// ============================================
+// Event Feed Actions
+// ============================================
+
+/**
+ * Get campus events for the current user
+ * @param {object} filters - Filter options
+ * @param {string | string[]} filters.event_type - Optional - filter by event type(s)
+ * @param {string} filters.visibility - Optional - filter by visibility
+ * @param {boolean} filters.rush_only - Optional - show only rush-only events
+ * @param {number} filters.limit - Optional - limit results (default: 50)
+ * @param {number} filters.offset - Optional - pagination offset
+ * @returns {Promise<{data: Array|null, error: object|null}>}
+ */
+export async function getCampusEventsAction(filters = {}) {
+  // Use existing getCurrentUserId helper function (already defined in this file)
+  const userId = await getCurrentUserId()
+  
+  if (!userId) {
+    return { data: null, error: { message: 'Not authenticated' } }
+  }
+  
+  return await getCampusEvents(userId, filters)
 }
 
