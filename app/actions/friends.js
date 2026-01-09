@@ -15,7 +15,9 @@ import {
   getFriends,
   getFriendRequests,
   getFriendshipStatus,
-  getPeopleYouMet
+  getPeopleYouMet,
+  getFriendshipStatusesBatch,
+  getFriendProfilesBatch
 } from '@/lib/supabase/friendships'
 import { createClient } from '@/lib/supabase/server'
 
@@ -206,5 +208,57 @@ export async function getPeopleYouMetAction(limit = 20, includeCrossSchool = tru
   }
   
   return await getPeopleYouMet(user.id, limit, includeCrossSchool)
+}
+
+/**
+ * Get friendship statuses for multiple users at once (Server Action wrapper)
+ * Batch query for efficiency - reduces API calls when checking multiple users
+ * @param {string[]} otherUserIds - Array of other user IDs to check status with
+ * @returns {Promise<{data: Array<{otherUserId: string, status: string, friendship: object|null}>|null, error: object|null}>}
+ */
+export async function getFriendshipStatusesBatchAction(otherUserIds) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) {
+    return { data: null, error: { message: 'Not authenticated' } }
+  }
+
+  // Validate input
+  if (!Array.isArray(otherUserIds)) {
+    return { data: null, error: { message: 'otherUserIds must be an array' } }
+  }
+
+  if (otherUserIds.length === 0) {
+    return { data: [], error: null }
+  }
+  
+  return await getFriendshipStatusesBatch(user.id, otherUserIds)
+}
+
+/**
+ * Get user profiles for multiple user IDs efficiently (Server Action wrapper)
+ * Batch query for efficiency - reduces API calls when loading multiple profiles
+ * @param {string[]} userIds - Array of user IDs to fetch profiles for
+ * @returns {Promise<{data: Array<{id: string, name: string, profile_pic: string, year: number, school: string}>|null, error: object|null}>}
+ */
+export async function getFriendProfilesBatchAction(userIds) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) {
+    return { data: null, error: { message: 'Not authenticated' } }
+  }
+
+  // Validate input
+  if (!Array.isArray(userIds)) {
+    return { data: null, error: { message: 'userIds must be an array' } }
+  }
+
+  if (userIds.length === 0) {
+    return { data: [], error: null }
+  }
+  
+  return await getFriendProfilesBatch(userIds)
 }
 
