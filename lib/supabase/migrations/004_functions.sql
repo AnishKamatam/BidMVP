@@ -339,10 +339,38 @@ END;
 $$ LANGUAGE plpgsql STABLE;
 
 -- ============================================
+-- 10. Trigger: Auto-update conversation last_message_at
+-- ============================================
+-- Automatically updates the conversation's last_message_at timestamp
+-- when a new message is inserted into the messages table
+
+CREATE OR REPLACE FUNCTION update_conversation_last_message()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Update the conversation's last_message_at to the new message's created_at
+  UPDATE conversations
+  SET last_message_at = NEW.created_at
+  WHERE id = NEW.conversation_id;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Drop trigger if it exists (for re-running migration)
+DROP TRIGGER IF EXISTS messages_update_last_message ON messages;
+
+-- Create trigger to auto-update last_message_at when message is inserted
+CREATE TRIGGER messages_update_last_message
+  AFTER INSERT ON messages
+  FOR EACH ROW
+  EXECUTE FUNCTION update_conversation_last_message();
+
+-- ============================================
 -- Notes
 -- ============================================
 -- SECURITY DEFINER functions run with elevated privileges (needed for updates)
 -- STABLE functions can be optimized (results don't change within a transaction)
 -- IMMUTABLE functions always return same result for same input
 -- Triggers automatically update safety scores when interactions/reports are created
+-- Trigger automatically updates conversations.last_message_at when messages are inserted
 

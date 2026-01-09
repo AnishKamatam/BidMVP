@@ -7,8 +7,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { getCampusEventsAction } from '@/app/actions/events'
-// For development/testing: can switch to mock data
-// import { mockGetCampusEvents } from '@/lib/mocks/eventFeedData'
 import EventCard from '@/components/EventCard'
 import EventFilters from '@/components/EventFilters'
 import PaymentSuccessModal from '@/components/PaymentSuccessModal'
@@ -44,11 +42,7 @@ export default function EventsPage() {
     setError(null)
 
     try {
-      // Use real backend function (can switch to mock for testing)
       const { data, error: eventsError } = await getCampusEventsAction(filters)
-
-      // For mock testing (uncomment to use):
-      // const { data, error: eventsError } = await mockGetCampusEvents(user.id, filters)
 
       if (eventsError) {
         // Check for specific error types
