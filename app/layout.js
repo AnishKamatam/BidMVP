@@ -5,6 +5,7 @@
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { FriendProvider } from '@/contexts/FriendContext'
 import { FraternityProvider } from '@/contexts/FraternityContext'
 import LayoutWrapper from '@/components/LayoutWrapper'
 import PWAMetaTags from '@/components/PWAMetaTags'
@@ -51,12 +52,15 @@ export default function RootLayout({ children }) {
         <PWAMetaTags />
         {/* Wrap entire app in AuthProvider so any component can access auth state */}
         <AuthProvider>
-          {/* Wrap in FraternityProvider so any component can access fraternity state */}
-          <FraternityProvider>
-            <LayoutWrapper>
-              {children}
-            </LayoutWrapper>
-          </FraternityProvider>
+          {/* Wrap in FriendProvider so any component can access friend state */}
+          <FriendProvider>
+            {/* Wrap in FraternityProvider so any component can access fraternity state */}
+            <FraternityProvider>
+              <LayoutWrapper>
+                {children}
+              </LayoutWrapper>
+            </FraternityProvider>
+          </FriendProvider>
         </AuthProvider>
       </body>
     </html>

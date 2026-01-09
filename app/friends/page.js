@@ -6,16 +6,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import {
-  getFriendsAction,
-  getFriendRequestsAction,
-  getSentRequestsAction,
-  getPeopleYouMetAction,
-  acceptFriendRequestAction,
-  declineFriendRequestAction,
-  sendFriendRequestAction,
-  removeFriendAction
-} from '@/app/actions/friends'
+import { useFriend } from '@/contexts/FriendContext'
 import FriendList from '@/components/FriendList'
 import FriendRequestCard from '@/components/FriendRequestCard'
 import PeopleYouMet from '@/components/PeopleYouMet'
@@ -33,25 +24,24 @@ const TABS = {
 export default function FriendsPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
+  const { 
+    friends, 
+    receivedRequests, 
+    sentRequests, 
+    suggestions,
+    loading: friendContextLoading,
+    error: friendContextError,
+    sendFriendRequest,
+    acceptFriendRequest,
+    declineFriendRequest,
+    removeFriend,
+    cancelFriendRequest
+  } = useFriend()
   const [activeTab, setActiveTab] = useState(TABS.FRIENDS)
-
-  // Data states
-  const [friends, setFriends] = useState([])
-  const [requests, setRequests] = useState([])
-  const [sentRequests, setSentRequests] = useState([])
-  const [suggestions, setSuggestions] = useState([])
-
-  // Loading states
-  const [friendsLoading, setFriendsLoading] = useState(false)
-  const [requestsLoading, setRequestsLoading] = useState(false)
-  const [sentLoading, setSentLoading] = useState(false)
-  const [suggestionsLoading, setSuggestionsLoading] = useState(false)
-
-  // Error states
-  const [error, setError] = useState(null)
-
-  // Action loading states
   const [actionLoading, setActionLoading] = useState({})
+
+  // Use context data
+  const requests = receivedRequests
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -60,206 +50,58 @@ export default function FriendsPage() {
     }
   }, [user, authLoading, router])
 
-  // Fetch friends
-  const fetchFriends = async () => {
-    if (!user?.id) return
-
-    setFriendsLoading(true)
-    setError(null)
-
-    try {
-      const { data, error: fetchError } = await getFriendsAction()
-      if (fetchError) {
-        setError(fetchError.message || 'Failed to load friends')
-      } else {
-        // Backend returns [{friend: {...}, friendship: {...}}], extract friend objects
-        setFriends(data?.map(item => item.friend) || [])
-      }
-    } catch (err) {
-      setError(err.message || 'Failed to load friends')
-    } finally {
-      setFriendsLoading(false)
-    }
-  }
-
-  // Fetch friend requests
-  const fetchRequests = async () => {
-    if (!user?.id) return
-
-    setRequestsLoading(true)
-    setError(null)
-
-    try {
-      const { data, error: fetchError } = await getFriendRequestsAction()
-      if (fetchError) {
-        setError(fetchError.message || 'Failed to load requests')
-      } else {
-        // Backend returns {sent: [], received: []}, extract received
-        setRequests(data?.received || [])
-      }
-    } catch (err) {
-      setError(err.message || 'Failed to load requests')
-    } finally {
-      setRequestsLoading(false)
-    }
-  }
-
-  // Fetch sent requests
-  const fetchSentRequests = async () => {
-    if (!user?.id) return
-
-    setSentLoading(true)
-    setError(null)
-
-    try {
-      const { data, error: fetchError } = await getSentRequestsAction()
-      if (fetchError) {
-        setError(fetchError.message || 'Failed to load sent requests')
-      } else {
-        setSentRequests(data || [])
-      }
-    } catch (err) {
-      setError(err.message || 'Failed to load sent requests')
-    } finally {
-      setSentLoading(false)
-    }
-  }
-
-  // Fetch suggestions
-  // Default: includeCrossSchool = true (prioritizes same-school users but allows cross-school)
-  // To disable cross-school: getPeopleYouMetAction(20, false)
-  const fetchSuggestions = async () => {
-    if (!user?.id) return
-
-    setSuggestionsLoading(true)
-    setError(null)
-
-    try {
-      // includeCrossSchool defaults to true - prioritizes same-school but allows cross-school
-      const { data, error: fetchError } = await getPeopleYouMetAction(20, true)
-      if (fetchError) {
-        setError(fetchError.message || 'Failed to load suggestions')
-      } else {
-        // Backend returns [{user: {...}, sharedEvents: number, lastEventDate: string, isSameSchool: boolean}]
-        // Frontend expects suggestions with user properties at top level
-        const formatted = data?.map(item => ({
-          id: item.user.id,
-          name: item.user.name,
-          profile_pic: item.user.profile_pic,
-          year: item.user.year,
-          sharedEvents: item.sharedEvents,
-          lastEventDate: item.lastEventDate,
-          isSameSchool: item.isSameSchool || false
-        })) || []
-        setSuggestions(formatted)
-      }
-    } catch (err) {
-      setError(err.message || 'Failed to load suggestions')
-    } finally {
-      setSuggestionsLoading(false)
-    }
-  }
-
-  // Fetch data when tab changes or user changes
-  useEffect(() => {
-    if (authLoading || !user?.id) return
-
-    switch (activeTab) {
-      case TABS.FRIENDS:
-        fetchFriends()
-        break
-      case TABS.REQUESTS:
-        fetchRequests()
-        break
-      case TABS.SENT:
-        fetchSentRequests()
-        break
-      case TABS.SUGGESTIONS:
-        fetchSuggestions()
-        break
-    }
-  }, [activeTab, user?.id, authLoading])
-
-  // Handle accept request
+  // Handle accept request - uses context function
   const handleAcceptRequest = async (request) => {
     if (!user?.id || !request?.user?.id) return
 
     const actionKey = `accept-${request.id}`
     setActionLoading(prev => ({ ...prev, [actionKey]: true }))
-    setError(null)
 
     try {
-      // Backend expects friendId (sender's ID)
-      const { error: acceptError } = await acceptFriendRequestAction(request.user.id)
-
-      if (acceptError) {
-        setError(acceptError.message || 'Failed to accept request')
-      } else {
-        // Remove from requests and refresh friends
-        setRequests(prev => prev.filter(r => r.id !== request.id))
-        fetchFriends()
-      }
+      await acceptFriendRequest(request.user.id)
+      // Context handles optimistic update and real-time confirmation
     } catch (err) {
-      setError(err.message || 'Failed to accept request')
+      console.error('Error accepting request:', err)
     } finally {
       setActionLoading(prev => ({ ...prev, [actionKey]: false }))
     }
   }
 
-  // Handle deny request
+  // Handle deny request - uses context function
   const handleDenyRequest = async (request) => {
     if (!user?.id || !request?.user?.id) return
 
     const actionKey = `deny-${request.id}`
     setActionLoading(prev => ({ ...prev, [actionKey]: true }))
-    setError(null)
 
     try {
-      // Backend uses declineFriendRequestAction
-      const { error: denyError } = await declineFriendRequestAction(request.user.id)
-
-      if (denyError) {
-        setError(denyError.message || 'Failed to decline request')
-      } else {
-        // Remove from requests
-        setRequests(prev => prev.filter(r => r.id !== request.id))
-      }
+      await declineFriendRequest(request.user.id)
+      // Context handles optimistic update and real-time confirmation
     } catch (err) {
-      setError(err.message || 'Failed to decline request')
+      console.error('Error declining request:', err)
     } finally {
       setActionLoading(prev => ({ ...prev, [actionKey]: false }))
     }
   }
 
-  // Handle send request (from suggestions)
+  // Handle send request (from suggestions) - uses context function
   const handleSendRequest = async (suggestion) => {
     if (!user?.id || !suggestion?.id) return
 
     const actionKey = `send-${suggestion.id}`
     setActionLoading(prev => ({ ...prev, [actionKey]: true }))
-    setError(null)
 
     try {
-      // Backend doesn't need userId (gets from auth)
-      const { error: sendError } = await sendFriendRequestAction(suggestion.id)
-
-      if (sendError) {
-        setError(sendError.message || 'Failed to send request')
-      } else {
-        // Remove from suggestions and refresh sent requests
-        setSuggestions(prev => prev.filter(s => s.id !== suggestion.id))
-        if (activeTab === TABS.SENT) {
-          fetchSentRequests()
-        }
-      }
+      await sendFriendRequest(suggestion.id)
+      // Context handles optimistic update and real-time confirmation
     } catch (err) {
-      setError(err.message || 'Failed to send request')
+      console.error('Error sending request:', err)
     } finally {
       setActionLoading(prev => ({ ...prev, [actionKey]: false }))
     }
   }
 
-  // Handle remove friend
+  // Handle remove friend - uses context function
   const handleRemoveFriend = async (friend) => {
     if (!user?.id || !friend?.id) return
 
@@ -269,26 +111,25 @@ export default function FriendsPage() {
 
     const actionKey = `remove-${friend.id}`
     setActionLoading(prev => ({ ...prev, [actionKey]: true }))
-    setError(null)
 
     try {
-      // Backend doesn't need userId (gets from auth)
-      const { error: removeError } = await removeFriendAction(friend.id)
-
-      if (removeError) {
-        setError(removeError.message || 'Failed to remove friend')
-      } else {
-        // Remove from friends list
-        setFriends(prev => prev.filter(f => f.id !== friend.id))
-      }
+      await removeFriend(friend.id)
+      // Context handles optimistic update and real-time confirmation
     } catch (err) {
-      setError(err.message || 'Failed to remove friend')
+      console.error('Error removing friend:', err)
     } finally {
       setActionLoading(prev => ({ ...prev, [actionKey]: false }))
     }
   }
 
-  if (authLoading) {
+  // Use context error and loading states
+  const error = friendContextError
+  const friendsLoading = friendContextLoading
+  const requestsLoading = friendContextLoading
+  const sentLoading = friendContextLoading
+  const suggestionsLoading = friendContextLoading
+
+  if (authLoading || friendContextLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-medium">Loading...</p>
@@ -441,11 +282,7 @@ export default function FriendsPage() {
           )}
 
           {activeTab === TABS.SUGGESTIONS && (
-            <PeopleYouMet
-              suggestions={suggestions}
-              onSendRequest={handleSendRequest}
-              loading={suggestionsLoading}
-            />
+            <PeopleYouMet />
           )}
         </div>
       </div>

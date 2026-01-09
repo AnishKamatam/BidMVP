@@ -1,8 +1,10 @@
 // components/PeopleYouMet.js
 // Component to display people user might have met at events
+// Can use context for suggestions and actions, or accept as props
 
 'use client'
 
+import { useFriend } from '@/contexts/FriendContext'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Avatar from '@/components/ui/Avatar'
@@ -36,11 +38,20 @@ function formatTimeAgo(timestamp) {
 }
 
 export default function PeopleYouMet({ 
-  suggestions = [], 
-  onSendRequest, 
-  loading = false,
+  suggestions: propsSuggestions, // If provided, use props; otherwise use context
+  onSendRequest: propsOnSendRequest, // If provided, use props; otherwise use context
+  loading: propsLoading, // If provided, use props; otherwise use context
   eventId = null 
 }) {
+  // Always call hook (React requires hooks to be called unconditionally)
+  // If props are provided, they take precedence over context
+  // Component requires FriendProvider if props are not provided
+  const friendContext = useFriend()
+
+  // Use props if provided, otherwise use context
+  const suggestions = propsSuggestions !== undefined ? propsSuggestions : (friendContext?.suggestions || [])
+  const onSendRequest = propsOnSendRequest !== undefined ? propsOnSendRequest : (friendContext?.sendFriendRequest || (() => {}))
+  const loading = propsLoading !== undefined ? propsLoading : (friendContext?.loading || false)
   if (loading) {
     return (
       <div className="space-y-4">
