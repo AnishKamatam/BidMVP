@@ -7,6 +7,7 @@ import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { FriendProvider } from '@/contexts/FriendContext'
 import { FraternityProvider } from '@/contexts/FraternityContext'
+import { ChatProvider } from '@/contexts/ChatContext'
 import LayoutWrapper from '@/components/LayoutWrapper'
 import PWAMetaTags from '@/components/PWAMetaTags'
 
@@ -56,9 +57,12 @@ export default function RootLayout({ children }) {
           <FriendProvider>
             {/* Wrap in FraternityProvider so any component can access fraternity state */}
             <FraternityProvider>
-              <LayoutWrapper>
-                {children}
-              </LayoutWrapper>
+              {/* Wrap in ChatProvider so any component can access chat state */}
+              <ChatProvider>
+                <LayoutWrapper>
+                  {children}
+                </LayoutWrapper>
+              </ChatProvider>
             </FraternityProvider>
           </FriendProvider>
         </AuthProvider>
