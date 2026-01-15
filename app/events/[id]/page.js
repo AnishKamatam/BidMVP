@@ -23,6 +23,8 @@ import Badge from '@/components/ui/Badge'
 import Avatar from '@/components/ui/Avatar'
 import BidPurchaseButton from '@/components/BidPurchaseButton'
 import PaymentSuccessModal from '@/components/PaymentSuccessModal'
+import ChatWithHostButton from '@/components/ChatWithHostButton'
+import { getEventHostIdAction } from '@/app/actions/messages'
 
 export default function EventDetailsPage() {
   const params = useParams()
@@ -41,6 +43,7 @@ export default function EventDetailsPage() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [paymentInfo, setPaymentInfo] = useState(null)
+  const [eventHostId, setEventHostId] = useState(null)
 
   // Memoize checkCheckInStatus to avoid recreating on every render
   const checkCheckInStatus = useCallback(async () => {
@@ -100,6 +103,12 @@ export default function EventDetailsPage() {
         if (eventData.frat_id) {
           const { data: adminData } = await checkIsAdminAction(eventData.frat_id)
           setIsAdmin(adminData?.isAdmin || false)
+        }
+
+        // Get event host ID
+        const { data: hostData } = await getEventHostIdAction(eventId)
+        if (hostData?.host_id) {
+          setEventHostId(hostData.host_id)
         }
 
         // Handle approval status
@@ -419,6 +428,16 @@ export default function EventDetailsPage() {
                 }}
                 onError={(error) => {
                   console.error('Bid purchase error:', error)
+                }}
+              />
+            )}
+
+            {/* Chat with Host Button */}
+            {eventHostId && user?.id && eventHostId !== user.id && (
+              <ChatWithHostButton
+                eventId={eventId}
+                onSuccess={() => {
+                  // Navigation handled by ChatWithHostButton
                 }}
               />
             )}

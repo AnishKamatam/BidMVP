@@ -9,33 +9,7 @@ import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Avatar from '@/components/ui/Avatar'
 import Badge from '@/components/ui/Badge'
-
-/**
- * Format time ago string
- * @param {string} timestamp - ISO timestamp
- * @returns {string} - Formatted time ago string
- */
-function formatTimeAgo(timestamp) {
-  if (!timestamp) return 'Recently'
-  
-  const now = new Date()
-  const then = new Date(timestamp)
-  const diffMs = now - then
-  const diffMins = Math.floor(diffMs / 1000 / 60)
-  const diffHours = Math.floor(diffMins / 60)
-  const diffDays = Math.floor(diffHours / 24)
-
-  if (diffMins < 1) return 'Just now'
-  if (diffMins < 60) return `${diffMins}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
-  if (diffDays < 7) return `${diffDays}d ago`
-  
-  const weeks = Math.floor(diffDays / 7)
-  if (weeks < 4) return `${weeks}w ago`
-  
-  const months = Math.floor(diffDays / 30)
-  return `${months}mo ago`
-}
+import { formatTimeAgo } from '@/lib/utils/timeFormatting'
 
 export default function PeopleYouMet({ 
   suggestions: propsSuggestions, // If provided, use props; otherwise use context
