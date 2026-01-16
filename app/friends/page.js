@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useFriend } from '@/contexts/FriendContext'
@@ -40,8 +40,8 @@ export default function FriendsPage() {
   const [activeTab, setActiveTab] = useState(TABS.FRIENDS)
   const [actionLoading, setActionLoading] = useState({})
 
-  // Use context data
-  const requests = receivedRequests
+  // Memoize requests to avoid unnecessary re-renders
+  const requests = useMemo(() => receivedRequests, [receivedRequests])
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -51,7 +51,7 @@ export default function FriendsPage() {
   }, [user, authLoading, router])
 
   // Handle accept request - uses context function
-  const handleAcceptRequest = async (request) => {
+  const handleAcceptRequest = useCallback(async (request) => {
     if (!user?.id || !request?.user?.id) return
 
     const actionKey = `accept-${request.id}`
@@ -65,10 +65,10 @@ export default function FriendsPage() {
     } finally {
       setActionLoading(prev => ({ ...prev, [actionKey]: false }))
     }
-  }
+  }, [user?.id, acceptFriendRequest])
 
   // Handle deny request - uses context function
-  const handleDenyRequest = async (request) => {
+  const handleDenyRequest = useCallback(async (request) => {
     if (!user?.id || !request?.user?.id) return
 
     const actionKey = `deny-${request.id}`
@@ -82,10 +82,10 @@ export default function FriendsPage() {
     } finally {
       setActionLoading(prev => ({ ...prev, [actionKey]: false }))
     }
-  }
+  }, [user?.id, declineFriendRequest])
 
   // Handle send request (from suggestions) - uses context function
-  const handleSendRequest = async (suggestion) => {
+  const handleSendRequest = useCallback(async (suggestion) => {
     if (!user?.id || !suggestion?.id) return
 
     const actionKey = `send-${suggestion.id}`
@@ -99,10 +99,10 @@ export default function FriendsPage() {
     } finally {
       setActionLoading(prev => ({ ...prev, [actionKey]: false }))
     }
-  }
+  }, [user?.id, sendFriendRequest])
 
   // Handle remove friend - uses context function
-  const handleRemoveFriend = async (friend) => {
+  const handleRemoveFriend = useCallback(async (friend) => {
     if (!user?.id || !friend?.id) return
 
     if (!confirm(`Are you sure you want to remove ${friend.name} as a friend?`)) {
@@ -120,14 +120,14 @@ export default function FriendsPage() {
     } finally {
       setActionLoading(prev => ({ ...prev, [actionKey]: false }))
     }
-  }
+  }, [user?.id, removeFriend])
 
-  // Use context error and loading states
-  const error = friendContextError
-  const friendsLoading = friendContextLoading
-  const requestsLoading = friendContextLoading
-  const sentLoading = friendContextLoading
-  const suggestionsLoading = friendContextLoading
+  // Use context error and loading states - memoized
+  const error = useMemo(() => friendContextError, [friendContextError])
+  const friendsLoading = useMemo(() => friendContextLoading, [friendContextLoading])
+  const requestsLoading = useMemo(() => friendContextLoading, [friendContextLoading])
+  const sentLoading = useMemo(() => friendContextLoading, [friendContextLoading])
+  const suggestionsLoading = useMemo(() => friendContextLoading, [friendContextLoading])
 
   if (authLoading || friendContextLoading) {
     return (

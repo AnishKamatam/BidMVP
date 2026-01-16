@@ -3,11 +3,42 @@
 
 'use client'
 
+import { memo, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import { useChat } from '@/contexts/ChatContext'
 import Card from '@/components/ui/Card'
 import Avatar from '@/components/ui/Avatar'
 import Button from '@/components/ui/Button'
 
-export default function FriendList({ friends = [], onRemove, loading = false }) {
+function FriendList({ friends = [], onRemove, loading = false }) {
+  const router = useRouter()
+  const { createConversation } = useChat()
+  const [messageLoading, setMessageLoading] = useState({})
+
+  const handleMessage = useCallback(async (friend) => {
+    const friendId = friend?.id || friend?.friend?.id
+    if (!friendId || messageLoading[friendId]) return
+
+    setMessageLoading(prev => ({ ...prev, [friendId]: true }))
+
+    try {
+      const conversation = await createConversation(friendId)
+      if (conversation) {
+        router.push(`/messages/${conversation.id}`)
+      }
+    } catch (err) {
+      console.error('Error creating conversation:', err)
+    } finally {
+      setMessageLoading(prev => ({ ...prev, [friendId]: false }))
+    }
+  }, [createConversation, router])
+
+  const handleRemove = useCallback((friend) => {
+    if (onRemove) {
+      onRemove(friend)
+    }
+  }, [onRemove])
+
   if (loading) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -63,21 +94,38 @@ export default function FriendList({ friends = [], onRemove, loading = false }) 
               )}
             </div>
 
-            {/* Remove button (if onRemove provided) */}
-            {onRemove && (
+            {/* Action buttons */}
+            <div className="flex gap-2 w-full">
               <Button
-                variant="text"
+                variant="primary"
                 size="small"
-                onClick={() => onRemove(friend)}
-                className="text-xs text-red-600 hover:text-red-700"
+                onClick={() => handleMessage(friend)}
+                disabled={messageLoading[friend?.id || friend?.friend?.id]}
+                className="flex-1"
               >
-                Remove
+                {messageLoading[friend?.id || friend?.friend?.id] ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  'Message'
+                )}
               </Button>
-            )}
+              {onRemove && (
+                <Button
+                  variant="text"
+                  size="small"
+                  onClick={() => handleRemove(friend)}
+                  className="text-xs text-red-600 hover:text-red-700"
+                >
+                  Remove
+                </Button>
+              )}
+            </div>
           </div>
         </Card>
       ))}
     </div>
   )
 }
+
+export default memo(FriendList)
 

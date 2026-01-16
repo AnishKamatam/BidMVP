@@ -22,7 +22,12 @@ import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
 import Avatar from '@/components/ui/Avatar'
 import BidPurchaseButton from '@/components/BidPurchaseButton'
-import PaymentSuccessModal from '@/components/PaymentSuccessModal'
+import dynamic from 'next/dynamic'
+
+// Dynamically import PaymentSuccessModal - only shown conditionally
+const PaymentSuccessModal = dynamic(() => import('@/components/PaymentSuccessModal'), {
+  ssr: false
+})
 import ChatWithHostButton from '@/components/ChatWithHostButton'
 import { getEventHostIdAction } from '@/app/actions/messages'
 

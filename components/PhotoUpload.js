@@ -12,6 +12,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import Image from 'next/image'
 import { uploadProfilePhoto } from '@/app/actions/profile'
 import { uploadFraternityPhotoAction } from '@/app/actions/profile'
 
@@ -167,11 +168,12 @@ export default function PhotoUpload({ value, onChange, required = false, error, 
 
         {preview ? (
           // Show preview
-          <div className="relative">
+          <div className="relative w-full h-48">
+            {/* Use regular img for preview (data URLs from FileReader) */}
             <img
               src={preview}
               alt="Profile preview"
-              className="w-full h-48 object-cover rounded-lg"
+              className="w-full h-full object-cover rounded-lg"
             />
             {!uploading && (
               <button

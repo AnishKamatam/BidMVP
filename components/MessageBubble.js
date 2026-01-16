@@ -3,10 +3,11 @@
 
 'use client'
 
+import { memo } from 'react'
 import Avatar from '@/components/ui/Avatar'
 import { formatMessageTime } from '@/lib/utils/timeFormatting'
 
-export default function MessageBubble({ message, isOwn, showAvatar = true }) {
+function MessageBubble({ message, isOwn, showAvatar = true }) {
   if (!message) return null
 
   const sender = message.sender || {}
@@ -68,4 +69,6 @@ export default function MessageBubble({ message, isOwn, showAvatar = true }) {
     </div>
   )
 }
+
+export default memo(MessageBubble)
 

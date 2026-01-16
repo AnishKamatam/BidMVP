@@ -8,12 +8,24 @@
 
 'use client'
 
+import { memo, useMemo, useCallback } from 'react'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import VerificationStatus from '@/components/VerificationStatus'
 import Avatar from '@/components/ui/Avatar'
 
-export default function FraternityCard({ 
+// Static type map - moved outside component
+const TYPE_MAP = {
+  'fraternity': 'Fraternity',
+  'sorority': 'Sorority',
+  'other': 'Other'
+}
+
+const getTypeLabel = (type) => {
+  return TYPE_MAP[type?.toLowerCase()] || type || 'Other'
+}
+
+function FraternityCard({ 
   fraternity, 
   onClick, 
   showMemberCount = false, 
@@ -23,17 +35,13 @@ export default function FraternityCard({
     return null
   }
 
-  // Backend returns lowercase types, map to capitalized labels
-  const getTypeLabel = (type) => {
-    const typeMap = {
-      'fraternity': 'Fraternity',
-      'sorority': 'Sorority',
-      'other': 'Other'
-    }
-    return typeMap[type?.toLowerCase()] || type || 'Other'
-  }
+  // Memoize type label
+  const typeLabel = useMemo(() => getTypeLabel(fraternity.type), [fraternity.type])
 
-  const typeLabel = getTypeLabel(fraternity.type)
+  // Memoize onClick handler - maintain original behavior (onClick called without params)
+  const handleClick = useCallback((e) => {
+    onClick?.(e)
+  }, [onClick])
 
   // Compact variant - minimal info
   if (variant === 'compact') {
@@ -41,7 +49,7 @@ export default function FraternityCard({
       <Card 
         variant="flat" 
         className={`border border-gray-border ${onClick ? 'cursor-pointer hover:border-primary-ui transition-colors' : ''}`}
-        onClick={onClick}
+        onClick={handleClick}
       >
         <div className="flex items-center gap-3">
           {fraternity.photo_url && (
@@ -79,7 +87,7 @@ export default function FraternityCard({
       <Card 
         variant="default" 
         className={`${onClick ? 'cursor-pointer hover:shadow-lg transition-shadow' : ''}`}
-        onClick={onClick}
+        onClick={handleClick}
       >
         <div className="space-y-4">
           {/* Header with photo and name */}
@@ -128,7 +136,7 @@ export default function FraternityCard({
     <Card 
       variant="flat" 
       className={`border border-gray-border ${onClick ? 'cursor-pointer hover:border-primary-ui transition-colors' : ''}`}
-      onClick={onClick}
+      onClick={handleClick}
     >
       <div className="space-y-3">
         {/* Header */}
@@ -166,4 +174,6 @@ export default function FraternityCard({
     </Card>
   )
 }
+
+export default memo(FraternityCard)
 

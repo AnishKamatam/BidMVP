@@ -1,17 +1,31 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { getEventAction } from '@/app/actions/events'
 import { checkInUserAction } from '@/app/actions/checkin'
 import { checkIsAdminAction } from '@/app/actions/fraternity'
-import QRScanner from '@/components/QRScanner'
 import CheckInList from '@/components/CheckInList'
-import CheckInConfirmationModal from '@/components/CheckInConfirmationModal'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
 import LayoutWrapper from '@/components/LayoutWrapper'
+
+// Dynamically import heavy components that are only used conditionally
+const QRScanner = dynamic(() => import('@/components/QRScanner'), {
+  loading: () => (
+    <Card className="p-8 text-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-ui border-t-transparent mx-auto mb-2"></div>
+      <p className="text-gray-medium">Loading scanner...</p>
+    </Card>
+  ),
+  ssr: false // QR scanner requires browser APIs
+})
+
+const CheckInConfirmationModal = dynamic(() => import('@/components/CheckInConfirmationModal'), {
+  ssr: false
+})
 
 export default function CheckInPage() {
   const params = useParams()

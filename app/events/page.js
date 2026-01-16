@@ -3,15 +3,21 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react'
+import dynamic from 'next/dynamic'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { getCampusEventsAction } from '@/app/actions/events'
 import EventCard from '@/components/EventCard'
 import EventFilters from '@/components/EventFilters'
-import PaymentSuccessModal from '@/components/PaymentSuccessModal'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import { EventCardSkeleton } from '@/components/ui/Skeleton'
+
+// Dynamically import PaymentSuccessModal - only shown conditionally
+const PaymentSuccessModal = dynamic(() => import('@/components/PaymentSuccessModal'), {
+  ssr: false
+})
 
 export default function EventsPage() {
   const router = useRouter()
@@ -167,19 +173,8 @@ export default function EventsPage() {
         {loading && !error && (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="p-4">
-                <div className="animate-pulse space-y-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 bg-gray-light rounded-full"></div>
-                    <div className="flex-1">
-                      <div className="h-4 bg-gray-light rounded w-24 mb-2"></div>
-                      <div className="h-3 bg-gray-light rounded w-16"></div>
-                    </div>
-                  </div>
-                  <div className="h-5 bg-gray-light rounded w-3/4"></div>
-                  <div className="h-4 bg-gray-light rounded w-1/2"></div>
-                  <div className="h-10 bg-gray-light rounded"></div>
-                </div>
+              <Card key={i}>
+                <EventCardSkeleton />
               </Card>
             ))}
           </div>

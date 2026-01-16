@@ -8,6 +8,8 @@
 
 'use client'
 
+import Image from 'next/image'
+
 const sizeClasses = {
   xs: 'w-6 h-6',      // 1.5rem
   sm: 'w-8 h-8',      // 2rem
@@ -16,18 +18,53 @@ const sizeClasses = {
   xl: 'w-24 h-24',    // 6rem
 }
 
+const sizePixels = {
+  xs: 24,      // 1.5rem
+  sm: 32,      // 2rem
+  md: 40,      // 2.5rem
+  lg: 64,      // 4rem
+  xl: 96,      // 6rem
+}
+
 export default function Avatar({ src, alt = '', size = 'md', className = '', ...props }) {
   const baseClasses = 'rounded-full object-cover border-2 border-neutral-white shadow-sm'
-  const sizeClass = sizeClasses[size]
+  // Ensure size is valid, fallback to 'md' if not
+  const validSize = sizeClasses[size] ? size : 'md'
+  const sizeClass = sizeClasses[validSize]
+  const sizePixel = sizePixels[validSize]
   const combinedClasses = `${baseClasses} ${sizeClass} ${className}`.trim()
   
   if (src) {
+    // Use Next.js Image for optimization, but fall back to img for data URLs or blob URLs
+    const isDataOrBlobUrl = src?.startsWith('data:') || src?.startsWith('blob:')
+    
+    if (isDataOrBlobUrl) {
+      return (
+        <img
+          src={src}
+          alt={alt}
+          className={combinedClasses}
+          {...props}
+        />
+      )
+    }
+    
+    // Ensure width and height are always defined numbers
+    const imageWidth = sizePixel || 40 // fallback to 'md' size (40px)
+    const imageHeight = sizePixel || 40
+    
+    // Extract width/height from props to prevent override, but keep other props
+    const { width, height, ...restProps } = props
+    
     return (
-      <img
+      <Image
         src={src}
         alt={alt}
+        width={imageWidth}
+        height={imageHeight}
         className={combinedClasses}
-        {...props}
+        style={{ objectFit: 'cover' }}
+        {...restProps}
       />
     )
   }

@@ -14,7 +14,12 @@ import GuestList from '@/components/GuestList'
 import ManualAddGuest from '@/components/ManualAddGuest'
 import LineSkipButton from '@/components/LineSkipButton'
 import BidPurchaseButton from '@/components/BidPurchaseButton'
-import PaymentSuccessModal from '@/components/PaymentSuccessModal'
+import dynamic from 'next/dynamic'
+
+// Dynamically import PaymentSuccessModal - only shown conditionally
+const PaymentSuccessModal = dynamic(() => import('@/components/PaymentSuccessModal'), {
+  ssr: false
+})
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'

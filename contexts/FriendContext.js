@@ -51,7 +51,7 @@ export function FriendProvider({ children }) {
   const [sentRequests, setSentRequests] = useState([]) // Outgoing friend requests
   const [suggestions, setSuggestions] = useState([]) // People you might have met
   const [friendshipStatuses, setFriendshipStatuses] = useState(new Map()) // userId -> status cache
-  const [loading, setLoading] = useState(true) // Initial loading state
+  const [loading, setLoading] = useState(false) // Initial loading state - start false to not block
   const [error, setError] = useState(null) // Error message
   const [refreshing, setRefreshing] = useState(false) // Manual refresh state
 
@@ -110,17 +110,25 @@ export function FriendProvider({ children }) {
         setSentRequests([])
       } else {
         // Backend returns {sent: [], received: []}
-        setReceivedRequests(data?.received || [])
-        setSentRequests(data?.sent || [])
+        // Ensure we always have arrays, even if data structure is unexpected
+        const received = Array.isArray(data?.received) ? data.received : []
+        const sent = Array.isArray(data?.sent) ? data.sent : []
+        
+        setReceivedRequests(received)
+        setSentRequests(sent)
         
         // Update friendship statuses cache
         setFriendshipStatuses(prev => {
           const newMap = new Map(prev)
-          (data?.received || []).forEach(request => {
-            newMap.set(request.user?.id, 'pending_received')
+          received.forEach(request => {
+            if (request?.user?.id) {
+              newMap.set(request.user.id, 'pending_received')
+            }
           })
-          (data?.sent || []).forEach(request => {
-            newMap.set(request.user?.id, 'pending_sent')
+          sent.forEach(request => {
+            if (request?.user?.id) {
+              newMap.set(request.user.id, 'pending_sent')
+            }
           })
           return newMap
         })

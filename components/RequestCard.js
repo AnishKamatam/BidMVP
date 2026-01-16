@@ -3,13 +3,14 @@
 
 'use client'
 
+import { memo, useCallback } from 'react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Avatar from '@/components/ui/Avatar'
 import SafetyBadge from '@/components/SafetyBadge'
 import { formatTimeAgo } from '@/lib/utils/timeFormatting'
 
-export default function RequestCard({
+function RequestCard({
   request,
   onApprove,
   onDeny,
@@ -25,6 +26,18 @@ export default function RequestCard({
 
   const { user, safety_tier, requested_at, status } = request
 
+  const handleApprove = useCallback(() => {
+    onApprove?.(request.id)
+  }, [onApprove, request.id])
+
+  const handleDeny = useCallback(() => {
+    onDeny?.(request.id)
+  }, [onDeny, request.id])
+
+  const handleSelect = useCallback((e) => {
+    onSelect?.(request.id, e.target.checked)
+  }, [onSelect, request.id])
+
   return (
     <Card variant="default" className="p-4">
       <div className="flex items-center gap-4">
@@ -33,7 +46,7 @@ export default function RequestCard({
           <input
             type="checkbox"
             checked={selected}
-            onChange={(e) => onSelect && onSelect(request.id, e.target.checked)}
+            onChange={handleSelect}
             className="w-5 h-5 rounded border-gray-border text-primary-ui focus:ring-primary-ui"
             disabled={loading}
           />
@@ -76,7 +89,7 @@ export default function RequestCard({
             <Button
               variant="primary"
               size="small"
-              onClick={() => onApprove && onApprove(request.id)}
+              onClick={handleApprove}
               disabled={loading}
             >
               Approve
@@ -84,7 +97,7 @@ export default function RequestCard({
             <Button
               variant="secondary"
               size="small"
-              onClick={() => onDeny && onDeny(request.id)}
+              onClick={handleDeny}
               disabled={loading}
             >
               Deny
@@ -95,4 +108,6 @@ export default function RequestCard({
     </Card>
   )
 }
+
+export default memo(RequestCard)
 

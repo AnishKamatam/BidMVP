@@ -3,11 +3,11 @@
 
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { memo, useState, useRef, useEffect, useCallback } from 'react'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 
-export default function MessageInput({ conversationId, onSend, disabled = false, placeholder = 'Type a message...' }) {
+function MessageInput({ conversationId, onSend, disabled = false, placeholder = 'Type a message...' }) {
   const [content, setContent] = useState('')
   const [sending, setSending] = useState(false)
   const inputRef = useRef(null)
@@ -19,7 +19,7 @@ export default function MessageInput({ conversationId, onSend, disabled = false,
     }
   }, [disabled])
 
-  const handleSend = async () => {
+  const handleSend = useCallback(async () => {
     if (!content.trim() || disabled || sending) return
 
     const messageContent = content.trim()
@@ -39,22 +39,26 @@ export default function MessageInput({ conversationId, onSend, disabled = false,
         inputRef.current.focus()
       }
     }
-  }
+  }, [content, disabled, sending, conversationId, onSend])
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend()
     }
-  }
+  }, [handleSend])
+
+  const handleChange = useCallback((e) => {
+    setContent(e.target.value)
+  }, [])
 
   return (
-    <div className="flex gap-2 p-4 bg-white border-t border-gray-border">
+    <div className="flex gap-2 px-4 py-3 bg-white border-t border-gray-border">
       <Input
         ref={inputRef}
         type="text"
         value={content}
-        onChange={(e) => setContent(e.target.value)}
+        onChange={handleChange}
         onKeyPress={handleKeyPress}
         placeholder={placeholder}
         disabled={disabled || sending}
@@ -70,4 +74,6 @@ export default function MessageInput({ conversationId, onSend, disabled = false,
     </div>
   )
 }
+
+export default memo(MessageInput)
 

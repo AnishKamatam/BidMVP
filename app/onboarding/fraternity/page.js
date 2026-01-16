@@ -15,10 +15,20 @@ import {
   addMemberAction
 } from '@/app/actions/fraternity'
 import { useFraternity } from '@/contexts/FraternityContext'
+import dynamic from 'next/dynamic'
 import FraternitySelector from '@/components/FraternitySelector'
-import FraternityForm from '@/components/FraternityForm'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+
+// Dynamically import FraternityForm - large component, only used when creating
+const FraternityForm = dynamic(() => import('@/components/FraternityForm'), {
+  loading: () => (
+    <Card className="p-8 text-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-ui border-t-transparent mx-auto mb-2"></div>
+      <p className="text-gray-medium">Loading form...</p>
+    </Card>
+  )
+})
 
 function FraternitySelectionPageContent() {
   const { user, loading: authLoading } = useAuth()

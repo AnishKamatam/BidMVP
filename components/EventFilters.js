@@ -3,75 +3,71 @@
 
 'use client'
 
+import { memo, useMemo, useCallback } from 'react'
 import Button from '@/components/ui/Button'
 import Toggle from '@/components/ui/Toggle'
 
-/**
- * Event Filters Component
- * @param {object} props
- * @param {object} props.filters - Current filter state
- * @param {string|null} props.filters.event_type - Selected event type or null for all
- * @param {string|null} props.filters.visibility - Selected visibility or null for all
- * @param {boolean} props.filters.rush_only - Show only rush-only events
- * @param {function} props.onChange - Callback when filters change
- */
-export default function EventFilters({ filters, onChange }) {
-  const eventTypes = [
-    { value: null, label: 'All Types' },
-    { value: 'party', label: 'Party' },
-    { value: 'mixer', label: 'Mixer' },
-    { value: 'rush', label: 'Rush Event' },
-    { value: 'invite-only', label: 'Invite Only' }
-  ]
+// Static arrays - moved outside component to avoid recreation
+const EVENT_TYPES = [
+  { value: null, label: 'All Types' },
+  { value: 'party', label: 'Party' },
+  { value: 'mixer', label: 'Mixer' },
+  { value: 'rush', label: 'Rush Event' },
+  { value: 'invite-only', label: 'Invite Only' }
+]
 
-  const visibilityTypes = [
-    { value: null, label: 'All' },
-    { value: 'public', label: 'Public' },
-    { value: 'invite-only', label: 'Invite Only' },
-    { value: 'rush-only', label: 'Rush Only' }
-  ]
+const VISIBILITY_TYPES = [
+  { value: null, label: 'All' },
+  { value: 'public', label: 'Public' },
+  { value: 'invite-only', label: 'Invite Only' },
+  { value: 'rush-only', label: 'Rush Only' }
+]
 
-  const handleEventTypeChange = (type) => {
+function EventFilters({ filters, onChange }) {
+
+  const handleEventTypeChange = useCallback((type) => {
     onChange({
       ...filters,
       event_type: type === filters.event_type ? null : type
     })
-  }
+  }, [filters, onChange])
 
-  const handleVisibilityChange = (visibility) => {
+  const handleVisibilityChange = useCallback((visibility) => {
     onChange({
       ...filters,
       visibility: visibility === filters.visibility ? null : visibility,
       // If selecting rush-only visibility, also enable rush_only toggle
       rush_only: visibility === 'rush-only' ? true : filters.rush_only
     })
-  }
+  }, [filters, onChange])
 
-  const handleRushOnlyToggle = (checked) => {
+  const handleRushOnlyToggle = useCallback((checked) => {
     onChange({
       ...filters,
       rush_only: checked,
       // If enabling rush_only, set visibility to rush-only
       visibility: checked ? 'rush-only' : filters.visibility === 'rush-only' ? null : filters.visibility
     })
-  }
+  }, [filters, onChange])
 
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     onChange({
       event_type: null,
       visibility: null,
       rush_only: false
     })
-  }
+  }, [onChange])
 
-  const hasActiveFilters = filters.event_type !== null || filters.visibility !== null || filters.rush_only
+  const hasActiveFilters = useMemo(() => {
+    return filters.event_type !== null || filters.visibility !== null || filters.rush_only
+  }, [filters.event_type, filters.visibility, filters.rush_only])
 
   return (
     <div className="bg-white border-b border-gray-light sticky top-[73px] z-10">
       <div className="px-4 py-3 space-y-3">
         {/* Event Type Filter - Horizontal Scrollable Chips */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
-          {eventTypes.map((type) => {
+          {EVENT_TYPES.map((type) => {
             const isActive = filters.event_type === type.value
             return (
               <Button
@@ -91,7 +87,7 @@ export default function EventFilters({ filters, onChange }) {
         <div className="flex items-center justify-between gap-4">
           {/* Visibility Filter - Optional, can be hidden */}
           <div className="flex items-center gap-2 overflow-x-auto flex-1 hide-scrollbar">
-            {visibilityTypes.map((vis) => {
+            {VISIBILITY_TYPES.map((vis) => {
               const isActive = filters.visibility === vis.value
               return (
                 <Button
@@ -134,4 +130,6 @@ export default function EventFilters({ filters, onChange }) {
     </div>
   )
 }
+
+export default memo(EventFilters)
 

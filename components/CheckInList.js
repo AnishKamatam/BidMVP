@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { memo, useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getCheckedInUsersAction } from '@/app/actions/checkin'
 import ManualCheckOut from './ManualCheckOut'
@@ -8,7 +8,8 @@ import Avatar from './ui/Avatar'
 import Card from './ui/Card'
 import Input from './ui/Input'
 
-function formatTime(dateString) {
+// Format time for check-in display (always shows time, not relative)
+function formatCheckInTime(dateString) {
   if (!dateString) return ''
   const date = new Date(dateString)
   return date.toLocaleTimeString('en-US', { 
@@ -18,7 +19,7 @@ function formatTime(dateString) {
   })
 }
 
-export default function CheckInList({ eventId, adminUserId, onCheckOut }) {
+function CheckInList({ eventId, adminUserId, onCheckOut }) {
   const [checkedInUsers, setCheckedInUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -147,7 +148,7 @@ export default function CheckInList({ eventId, adminUserId, onCheckOut }) {
                 <div>
                   <p className="font-medium text-neutral-black">{checkIn.user?.name || 'Unknown'}</p>
                   <p className="text-sm text-gray-medium">
-                    Checked in {formatTime(checkIn.checked_in_at)}
+                    Checked in {formatCheckInTime(checkIn.checked_in_at)}
                   </p>
                 </div>
               </div>
@@ -169,4 +170,6 @@ export default function CheckInList({ eventId, adminUserId, onCheckOut }) {
     </div>
   )
 }
+
+export default memo(CheckInList)
 

@@ -7,7 +7,7 @@
 
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 // Create the context that will hold our auth state and functions
@@ -143,59 +143,57 @@ export function AuthProvider({ children }) {
     }
   }, []) // Empty dependency array - only run once on mount
 
-  // Create new user account
-  // Supabase will send a confirmation email by default
-  // The edufilter.sql trigger validates .edu emails at the database level
-  const signUp = async (email, password, returnTo = null) => {
+  // Sign up new user with email and password - memoized
+  const signUp = useCallback(async (email, password, returnTo = null) => {
     try {
       const supabase = createClient()
     
-    // Capture the current page path to return user after email verification
-    // If returnTo is not provided, use current pathname (or '/' as fallback)
-    let redirectPath = returnTo
-    if (typeof window !== 'undefined' && !redirectPath) {
-      redirectPath = window.location.pathname || '/'
-    }
-    
-    // Store returnTo in user metadata so it persists across devices/browsers
-    // This works better than cookies since email links may be clicked from different contexts
-    const userMetadata = redirectPath && redirectPath !== '/' 
-      ? { returnTo: redirectPath }
-      : {}
-    
-    // Also store in cookie as fallback for backward compatibility
-    if (typeof document !== 'undefined' && redirectPath && redirectPath !== '/') {
-      document.cookie = `auth_returnTo=${encodeURIComponent(redirectPath)}; path=/; max-age=3600; SameSite=Lax`
-    }
-    
-    // Build callback URL - Supabase will add its own query params (code, type)
-    const callbackUrl = typeof window !== 'undefined'
-      ? `${window.location.origin}/auth/callback`
-      : undefined
-    
-    // Signup with email redirect URL pointing to our callback route
-    // Store returnTo in user metadata so it's available after email verification
-    // This ensures verification links from Supabase point to our callback handler
-    // NOTE: Using only options.data to store metadata - no updateUser call after signup
-    // to avoid interfering with email verification sending
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: callbackUrl,
-        data: userMetadata, // Store returnTo in user_metadata - this persists through email verification
+      // Capture the current page path to return user after email verification
+      // If returnTo is not provided, use current pathname (or '/' as fallback)
+      let redirectPath = returnTo
+      if (typeof window !== 'undefined' && !redirectPath) {
+        redirectPath = window.location.pathname || '/'
       }
-    })
-    
-    return { data, error }
+      
+      // Store returnTo in user metadata so it persists across devices/browsers
+      // This works better than cookies since email links may be clicked from different contexts
+      const userMetadata = redirectPath && redirectPath !== '/' 
+        ? { returnTo: redirectPath }
+        : {}
+      
+      // Also store in cookie as fallback for backward compatibility
+      if (typeof document !== 'undefined' && redirectPath && redirectPath !== '/') {
+        document.cookie = `auth_returnTo=${encodeURIComponent(redirectPath)}; path=/; max-age=3600; SameSite=Lax`
+      }
+      
+      // Build callback URL - Supabase will add its own query params (code, type)
+      const callbackUrl = typeof window !== 'undefined'
+        ? `${window.location.origin}/auth/callback`
+        : undefined
+      
+      // Signup with email redirect URL pointing to our callback route
+      // Store returnTo in user metadata so it's available after email verification
+      // This ensures verification links from Supabase point to our callback handler
+      // NOTE: Using only options.data to store metadata - no updateUser call after signup
+      // to avoid interfering with email verification sending
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: callbackUrl,
+          data: userMetadata, // Store returnTo in user_metadata - this persists through email verification
+        }
+      })
+      
+      return { data, error }
     } catch (error) {
       console.error('Failed to create Supabase client in signUp:', error)
       return { data: null, error: { message: 'Failed to initialize authentication' } }
     }
-  }
+  }, [])
 
-  // Sign in existing user with email and password
-  const signIn = async (email, password) => {
+  // Sign in existing user with email and password - memoized
+  const signIn = useCallback(async (email, password) => {
     try {
       const supabase = createClient()
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -207,10 +205,10 @@ export function AuthProvider({ children }) {
       console.error('Failed to create Supabase client in signIn:', error)
       return { data: null, error: { message: 'Failed to initialize authentication' } }
     }
-  }
+  }, [])
 
-  // Sign out current user and clear session
-  const signOut = async () => {
+  // Sign out current user and clear session - memoized
+  const signOut = useCallback(async () => {
     try {
       const supabase = createClient()
     const { error } = await supabase.auth.signOut()
@@ -219,10 +217,10 @@ export function AuthProvider({ children }) {
       console.error('Failed to create Supabase client in signOut:', error)
       return { error: { message: 'Failed to initialize authentication' } }
     }
-  }
+  }, [])
 
-  // Resend confirmation email
-  const resendConfirmationEmail = async (email, returnTo = null) => {
+  // Resend confirmation email - memoized
+  const resendConfirmationEmail = useCallback(async (email, returnTo = null) => {
     try {
       const supabase = createClient()
     
@@ -264,17 +262,17 @@ export function AuthProvider({ children }) {
       console.error('Failed to create Supabase client in resendConfirmationEmail:', error)
       return { data: null, error: { message: 'Failed to initialize authentication' } }
     }
-  }
+  }, [])
 
-  // Package everything we want to expose to consuming components
-  const value = {
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo(() => ({
     user,        // Current user object or null
     loading,     // Loading state for initial check
     signUp,      // Function to create account
     signIn,      // Function to log in
     signOut,     // Function to log out
     resendConfirmationEmail, // Function to resend confirmation email
-  }
+  }), [user, loading, signUp, signIn, signOut, resendConfirmationEmail])
 
   // Provide auth state and functions to all child components
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

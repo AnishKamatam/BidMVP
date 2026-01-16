@@ -3,13 +3,15 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useChat } from '@/contexts/ChatContext'
 import MessageList from '@/components/MessageList'
 import MessageRequestCard from '@/components/MessageRequestCard'
+import NewMessageModal from '@/components/NewMessageModal'
 import Card from '@/components/ui/Card'
+import Button from '@/components/ui/Button'
 import LayoutWrapper from '@/components/LayoutWrapper'
 
 export default function MessagesPage() {
@@ -25,6 +27,13 @@ export default function MessagesPage() {
     declineMessageRequest
   } = useChat()
   const [actionLoading, setActionLoading] = useState({})
+  const [showNewMessageModal, setShowNewMessageModal] = useState(false)
+
+  // Memoize pending requests
+  const pendingRequests = useMemo(() => 
+    messageRequests.filter(req => req.status === 'pending'),
+    [messageRequests]
+  )
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -41,7 +50,7 @@ export default function MessagesPage() {
   }, [user?.id, authLoading, fetchConversations])
 
   // Handle accept message request
-  const handleAcceptRequest = async (request) => {
+  const handleAcceptRequest = useCallback(async (request) => {
     if (!user?.id || !request?.id) return
 
     const actionKey = `accept-${request.id}`
@@ -56,10 +65,10 @@ export default function MessagesPage() {
     } finally {
       setActionLoading(prev => ({ ...prev, [actionKey]: false }))
     }
-  }
+  }, [user?.id, acceptMessageRequest, fetchConversations])
 
   // Handle decline message request
-  const handleDeclineRequest = async (request) => {
+  const handleDeclineRequest = useCallback(async (request) => {
     if (!user?.id || !request?.id) return
 
     const actionKey = `decline-${request.id}`
@@ -72,13 +81,39 @@ export default function MessagesPage() {
     } finally {
       setActionLoading(prev => ({ ...prev, [actionKey]: false }))
     }
-  }
+  }, [user?.id, declineMessageRequest])
+
+  const handleNewMessageClick = useCallback(() => {
+    setShowNewMessageModal(true)
+  }, [])
+
+  const handleCloseModal = useCallback(() => {
+    setShowNewMessageModal(false)
+  }, [])
 
   if (authLoading || chatLoading) {
     return (
       <LayoutWrapper>
-        <div className="min-h-screen flex items-center justify-center">
-          <p className="text-gray-medium">Loading...</p>
+        <div className="min-h-screen bg-gray-bg p-4 md:p-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="mb-6">
+              <div className="h-8 bg-gray-light rounded w-48 mb-2 animate-pulse" />
+              <div className="h-4 bg-gray-light rounded w-64 animate-pulse" />
+            </div>
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map(i => (
+                <div key={i} className="bg-white rounded-lg p-4 animate-pulse">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-gray-light" />
+                    <div className="flex-1">
+                      <div className="h-4 w-32 bg-gray-light rounded mb-2" />
+                      <div className="h-3 w-48 bg-gray-light rounded" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </LayoutWrapper>
     )
@@ -88,16 +123,26 @@ export default function MessagesPage() {
     return null
   }
 
-  // Filter pending message requests
-  const pendingRequests = messageRequests.filter(req => req.status === 'pending')
-
   return (
     <LayoutWrapper>
       <div className="min-h-screen bg-gray-bg p-4 md:p-6 pb-[calc(3.5rem+max(0.5rem,env(safe-area-inset-bottom)))]">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-dark mb-2">Messages</h1>
+            <div className="flex items-start justify-between gap-4 mb-2">
+              <h1 className="text-2xl font-bold text-gray-dark">Messages</h1>
+            <Button
+              variant="primary"
+              size="medium"
+              onClick={handleNewMessageClick}
+              className="flex-shrink-0"
+            >
+                <svg className="w-5 h-5 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                <span className="hidden md:inline">New Message</span>
+              </Button>
+            </div>
             <p className="text-gray-medium">Your conversations and message requests</p>
           </div>
 
@@ -138,6 +183,12 @@ export default function MessagesPage() {
           </div>
         </div>
       </div>
+
+      {/* New Message Modal */}
+      <NewMessageModal
+        isOpen={showNewMessageModal}
+        onClose={handleCloseModal}
+      />
     </LayoutWrapper>
   )
 }

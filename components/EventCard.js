@@ -3,11 +3,40 @@
 
 'use client'
 
+import { memo, useCallback, useMemo } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Avatar from '@/components/ui/Avatar'
 import { formatEventDate } from '@/lib/utils/dateFormatting'
+
+// Static helper functions - moved outside component
+const getEventTypeLabel = (type) => {
+  const labels = {
+    'party': 'Party',
+    'mixer': 'Mixer',
+    'rush': 'Rush Event',
+    'invite-only': 'Invite Only'
+  }
+  return labels[type] || type
+}
+
+const getVisibilityLabel = (visibility) => {
+  const labels = {
+    'public': 'Public',
+    'invite-only': 'Invite Only',
+    'rush-only': 'Rush Only'
+  }
+  return labels[visibility] || visibility
+}
+
+const getVisibilityBadgeVariant = (visibility) => {
+  if (visibility === 'rush-only') {
+    return 'tag'
+  }
+  return 'tag'
+}
 
 /**
  * Event Card Component
@@ -29,14 +58,10 @@ import { formatEventDate } from '@/lib/utils/dateFormatting'
  * @param {function} props.onClick - Optional click handler
  * @param {string} props.variant - 'default' | 'compact'
  */
-export default function EventCard({ event, onClick, variant = 'default' }) {
+function EventCard({ event, onClick, variant = 'default' }) {
   const router = useRouter()
 
-  if (!event) {
-    return null
-  }
-
-  const handleCardClick = (e) => {
+  const handleCardClick = useCallback((e) => {
     // Prevent navigation if clicking on interactive elements
     if (e.target.closest('button') || e.target.closest('a') || e.target.closest('[role="button"]')) {
       e.stopPropagation()
@@ -48,52 +73,34 @@ export default function EventCard({ event, onClick, variant = 'default' }) {
     }
     // Navigate to event details page
     router.push(`/events/${event.id}`)
-  }
+  }, [event.id, onClick, router])
 
-  // Get event type label
-  const getEventTypeLabel = (type) => {
-    const labels = {
-      'party': 'Party',
-      'mixer': 'Mixer',
-      'rush': 'Rush Event',
-      'invite-only': 'Invite Only'
-    }
-    return labels[type] || type
-  }
-
-  // Get visibility label
-  const getVisibilityLabel = (visibility) => {
-    const labels = {
-      'public': 'Public',
-      'invite-only': 'Invite Only',
-      'rush-only': 'Rush Only'
-    }
-    return labels[visibility] || visibility
-  }
-
-  // Get visibility badge variant
-  const getVisibilityBadgeVariant = (visibility) => {
-    if (visibility === 'rush-only') {
-      return 'tag' // Could be styled differently
-    }
-    return 'tag'
-  }
+  // Memoize computed values
+  const isCompact = variant === 'compact'
+  const eventTypeLabel = useMemo(() => getEventTypeLabel(event.event_type), [event.event_type])
+  const visibilityLabel = useMemo(() => getVisibilityLabel(event.visibility), [event.visibility])
+  const visibilityBadgeVariant = useMemo(() => getVisibilityBadgeVariant(event.visibility), [event.visibility])
 
   // Truncate description
-  const truncateDescription = (text, maxLength = 100) => {
+  const truncateDescription = useCallback((text, maxLength = 100) => {
     if (!text) return null
     if (text.length <= maxLength) return text
     return text.substring(0, maxLength).trim() + '...'
-  }
+  }, [])
 
   // Truncate location
-  const truncateLocation = (text, maxLength = 50) => {
+  const truncateLocation = useCallback((text, maxLength = 50) => {
     if (!text) return null
     if (text.length <= maxLength) return text
     return text.substring(0, maxLength).trim() + '...'
-  }
+  }, [])
 
-  const isCompact = variant === 'compact'
+  const truncatedDescription = useMemo(() => truncateDescription(event.description, 100), [truncateDescription, event.description])
+  const truncatedLocation = useMemo(() => truncateLocation(event.location, 50), [truncateLocation, event.location])
+
+  if (!event) {
+    return null
+  }
 
   return (
     <div 
@@ -105,10 +112,13 @@ export default function EventCard({ event, onClick, variant = 'default' }) {
         {/* Event Image */}
         {event.image_url && (
           <div className={`relative w-full ${isCompact ? 'h-32' : 'h-48'} rounded-lg overflow-hidden bg-gray-light`}>
-            <img
+            <Image
               src={event.image_url}
               alt={event.title}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              unoptimized={event.image_url?.startsWith('data:') || event.image_url?.startsWith('blob:')}
             />
           </div>
         )}
@@ -140,10 +150,10 @@ export default function EventCard({ event, onClick, variant = 'default' }) {
           </div>
           <div className="flex gap-2 flex-shrink-0">
             <Badge variant="tag">
-              {getEventTypeLabel(event.event_type)}
+              {eventTypeLabel}
             </Badge>
-            <Badge variant={getVisibilityBadgeVariant(event.visibility)}>
-              {getVisibilityLabel(event.visibility)}
+            <Badge variant={visibilityBadgeVariant}>
+              {visibilityLabel}
             </Badge>
           </div>
         </div>
@@ -168,7 +178,7 @@ export default function EventCard({ event, onClick, variant = 'default' }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <span className="flex-1">{truncateLocation(event.location)}</span>
+            <span className="flex-1">{truncatedLocation}</span>
           </div>
         )}
 
@@ -179,7 +189,7 @@ export default function EventCard({ event, onClick, variant = 'default' }) {
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical'
           }}>
-            {truncateDescription(event.description, 100)}
+            {truncatedDescription}
           </p>
         )}
 
@@ -199,4 +209,6 @@ export default function EventCard({ event, onClick, variant = 'default' }) {
     </div>
   )
 }
+
+export default memo(EventCard)
 

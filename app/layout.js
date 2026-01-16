@@ -4,18 +4,21 @@
 
 import { Inter } from 'next/font/google'
 import './globals.css'
+import { Suspense } from 'react'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { FriendProvider } from '@/contexts/FriendContext'
 import { FraternityProvider } from '@/contexts/FraternityContext'
 import { ChatProvider } from '@/contexts/ChatContext'
 import LayoutWrapper from '@/components/LayoutWrapper'
 import PWAMetaTags from '@/components/PWAMetaTags'
+import ErrorBoundary from '@/components/ErrorBoundary'
 
 // Configure Inter font from Google Fonts
 // The variable option creates a CSS custom property we can reference
 const inter = Inter({ 
   subsets: ['latin'],           // Only load Latin character set
   variable: '--font-inter',     // Creates CSS var: --font-inter
+  display: 'swap',              // Prevents invisible text during font load
 })
 
 // Page metadata for SEO and browser tabs
@@ -51,21 +54,32 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${inter.variable} font-inter`}>
         <PWAMetaTags />
-        {/* Wrap entire app in AuthProvider so any component can access auth state */}
-        <AuthProvider>
-          {/* Wrap in FriendProvider so any component can access friend state */}
-          <FriendProvider>
-            {/* Wrap in FraternityProvider so any component can access fraternity state */}
-            <FraternityProvider>
-              {/* Wrap in ChatProvider so any component can access chat state */}
-              <ChatProvider>
-                <LayoutWrapper>
-                  {children}
-                </LayoutWrapper>
-              </ChatProvider>
-            </FraternityProvider>
-          </FriendProvider>
-        </AuthProvider>
+        <ErrorBoundary>
+          <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary-ui border-t-transparent mx-auto mb-4"></div>
+                <p className="text-gray-medium">Loading...</p>
+              </div>
+            </div>
+          }>
+            {/* Wrap entire app in AuthProvider so any component can access auth state */}
+            <AuthProvider>
+              {/* Wrap in FriendProvider so any component can access friend state */}
+              <FriendProvider>
+                {/* Wrap in FraternityProvider so any component can access fraternity state */}
+                <FraternityProvider>
+                  {/* Wrap in ChatProvider so any component can access chat state */}
+                  <ChatProvider>
+                    <LayoutWrapper>
+                      {children}
+                    </LayoutWrapper>
+                  </ChatProvider>
+                </FraternityProvider>
+              </FriendProvider>
+            </AuthProvider>
+          </Suspense>
+        </ErrorBoundary>
       </body>
     </html>
   )

@@ -3,22 +3,23 @@
 
 'use client'
 
+import { memo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Card from '@/components/ui/Card'
 import Avatar from '@/components/ui/Avatar'
 import Badge from '@/components/ui/Badge'
 import { formatTimeAgo } from '@/lib/utils/timeFormatting'
 
-export default function MessageList({ conversations = [], onSelect, loading = false }) {
+function MessageList({ conversations = [], onSelect, loading = false }) {
   const router = useRouter()
 
-  const handleSelect = (conversation) => {
+  const handleSelect = useCallback((conversation) => {
     if (onSelect) {
       onSelect(conversation)
     } else {
       router.push(`/messages/${conversation.id}`)
     }
-  }
+  }, [onSelect, router])
 
   if (loading) {
     return (
@@ -101,4 +102,6 @@ export default function MessageList({ conversations = [], onSelect, loading = fa
     </div>
   )
 }
+
+export default memo(MessageList)
 

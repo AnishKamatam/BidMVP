@@ -2,6 +2,10 @@
 // Next.js configuration file
 // PWA configuration added for Progressive Web App support
 
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+})
+
 const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
@@ -148,12 +152,38 @@ const withPWA = require('next-pwa')({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Empty config = all defaults
-  // Common options to add later:
-  // - images: { domains: [...] } for external images
-  // - env: { ... } for environment variables
-  // - redirects/rewrites for URL handling
+  // Enable compression for smaller payloads
+  compress: true,
+  
+  // Remove X-Powered-By header for security
+  poweredByHeader: false,
+  
+  // Image optimization configuration
+  images: {
+    // Allow images from Supabase storage and common domains
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.supabase.in',
+        pathname: '/storage/v1/object/public/**',
+      },
+      // Add any other image domains as needed
+    ],
+    // Image quality (1-100, default is 75)
+    formats: ['image/avif', 'image/webp'],
+    // Device sizes for responsive images
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    // Image sizes for different breakpoints
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // Minimum cache time (in seconds)
+    minimumCacheTTL: 60,
+  },
 }
 
-module.exports = withPWA(nextConfig)
+module.exports = withBundleAnalyzer(withPWA(nextConfig))
 

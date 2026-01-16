@@ -3,17 +3,26 @@
 
 'use client'
 
+import { memo, useCallback } from 'react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Avatar from '@/components/ui/Avatar'
 import { formatTimeAgo } from '@/lib/utils/timeFormatting'
 
-export default function FriendRequestCard({ request, onAccept, onDeny, loading = false }) {
+function FriendRequestCard({ request, onAccept, onDeny, loading = false }) {
   if (!request || !request.user) {
     return null
   }
 
   const { user, created_at } = request
+
+  const handleAccept = useCallback(() => {
+    onAccept?.(request)
+  }, [onAccept, request])
+
+  const handleDeny = useCallback(() => {
+    onDeny?.(request)
+  }, [onDeny, request])
 
   return (
     <Card variant="default" className="p-4">
@@ -45,7 +54,7 @@ export default function FriendRequestCard({ request, onAccept, onDeny, loading =
           <Button
             variant="primary"
             size="small"
-            onClick={() => onAccept && onAccept(request)}
+            onClick={handleAccept}
             disabled={loading}
           >
             Accept
@@ -53,7 +62,7 @@ export default function FriendRequestCard({ request, onAccept, onDeny, loading =
           <Button
             variant="secondary"
             size="small"
-            onClick={() => onDeny && onDeny(request)}
+            onClick={handleDeny}
             disabled={loading}
           >
             Deny
@@ -63,4 +72,6 @@ export default function FriendRequestCard({ request, onAccept, onDeny, loading =
     </Card>
   )
 }
+
+export default memo(FriendRequestCard)
 

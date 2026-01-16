@@ -4,14 +4,24 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
+import dynamic from 'next/dynamic'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useFraternity } from '@/contexts/FraternityContext'
 import { createFraternityAction } from '@/app/actions/fraternity'
 import { getProfile } from '@/app/actions/profile'
-import FraternityForm from '@/components/FraternityForm'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+
+// Dynamically import FraternityForm - large component, only used on create/join pages
+const FraternityForm = dynamic(() => import('@/components/FraternityForm'), {
+  loading: () => (
+    <Card className="p-8 text-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-ui border-t-transparent mx-auto mb-2"></div>
+      <p className="text-gray-medium">Loading form...</p>
+    </Card>
+  )
+})
 
 function CreateFraternityPageContent() {
   const router = useRouter()

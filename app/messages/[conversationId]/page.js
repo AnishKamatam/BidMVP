@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useChat } from '@/contexts/ChatContext'
@@ -107,7 +107,7 @@ export default function ConversationPage() {
   }, [messages, conversationId])
 
   // Handle send message
-  const handleSendMessage = async (convId, content) => {
+  const handleSendMessage = useCallback(async (convId, content) => {
     if (!content.trim()) return
 
     try {
@@ -118,10 +118,10 @@ export default function ConversationPage() {
       setError(err.message || 'Failed to send message')
       throw err
     }
-  }
+  }, [sendMessage, markAsRead])
 
   // Handle accept message request
-  const handleAcceptRequest = async (request) => {
+  const handleAcceptRequest = useCallback(async (request) => {
     try {
       await acceptMessageRequest(request.id)
       setMessageRequest(null)
@@ -130,20 +130,20 @@ export default function ConversationPage() {
     } catch (err) {
       setError(err.message || 'Failed to accept request')
     }
-  }
+  }, [acceptMessageRequest, fetchMessages, conversationId])
 
   // Handle decline message request
-  const handleDeclineRequest = async (request) => {
+  const handleDeclineRequest = useCallback(async (request) => {
     try {
       await declineMessageRequest(request.id)
       setMessageRequest(null)
     } catch (err) {
       setError(err.message || 'Failed to decline request')
     }
-  }
+  }, [declineMessageRequest])
 
   // Load more messages (pagination)
-  const handleLoadMore = async () => {
+  const handleLoadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return
 
     const conversationMessages = messages.get(conversationId) || []
@@ -158,7 +158,28 @@ export default function ConversationPage() {
     } finally {
       setLoadingMore(false)
     }
-  }
+  }, [loadingMore, hasMore, conversationId, messages, fetchMessages])
+
+  // Memoize conversation and messages lookup
+  const conversation = useMemo(() => 
+    conversations.find(c => c.id === conversationId),
+    [conversations, conversationId]
+  )
+  
+  const conversationMessages = useMemo(() => 
+    messages.get(conversationId) || [],
+    [messages, conversationId]
+  )
+
+  // Memoize computed values
+  const otherUser = useMemo(() => conversation?.other_user, [conversation])
+  const isRequestPending = useMemo(() => messageRequest?.status === 'pending', [messageRequest])
+  const isRequestDeclined = useMemo(() => messageRequest?.status === 'declined', [messageRequest])
+  const isRequester = useMemo(() => messageRequest?.requester_id === user?.id, [messageRequest, user?.id])
+  const isRecipient = useMemo(() => 
+    messageRequest && messageRequest.requester_id !== user?.id,
+    [messageRequest, user?.id]
+  )
 
   if (authLoading || loading) {
     return (
@@ -174,10 +195,6 @@ export default function ConversationPage() {
     router.push('/')
     return null
   }
-
-  // Find conversation
-  const conversation = conversations.find(c => c.id === conversationId)
-  const conversationMessages = messages.get(conversationId) || []
 
   if (!conversation) {
     return (
@@ -196,12 +213,6 @@ export default function ConversationPage() {
       </LayoutWrapper>
     )
   }
-
-  const otherUser = conversation.other_user
-  const isRequestPending = messageRequest?.status === 'pending'
-  const isRequestDeclined = messageRequest?.status === 'declined'
-  const isRequester = messageRequest?.requester_id === user.id
-  const isRecipient = messageRequest && messageRequest.requester_id !== user.id
 
   return (
     <LayoutWrapper>
@@ -246,7 +257,7 @@ export default function ConversationPage() {
         {/* Messages Container */}
         <div
           ref={messagesContainerRef}
-          className="flex-1 overflow-y-auto p-4 space-y-2"
+          className="flex-1 overflow-y-auto p-4 space-y-2 pb-6"
         >
           {/* Load More Button */}
           {hasMore && (
@@ -288,12 +299,14 @@ export default function ConversationPage() {
 
         {/* Message Input */}
         {!isRequestDeclined && (
-          <MessageInput
-            conversationId={conversationId}
-            onSend={handleSendMessage}
-            disabled={isRequestPending}
-            placeholder={isRequestPending ? 'Message request pending...' : 'Type a message...'}
-          />
+          <div className="pb-[calc(3.5rem+max(0.5rem,env(safe-area-inset-bottom)))]">
+            <MessageInput
+              conversationId={conversationId}
+              onSend={handleSendMessage}
+              disabled={isRequestPending}
+              placeholder={isRequestPending ? 'Message request pending...' : 'Type a message...'}
+            />
+          </div>
         )}
 
         {isRequestDeclined && (

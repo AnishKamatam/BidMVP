@@ -4,18 +4,31 @@
 'use client'
 
 import { useState, useEffect, useRef, Suspense } from 'react'
+import dynamic from 'next/dynamic'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useFraternity } from '@/contexts/FraternityContext'
 import { createEventAction } from '@/app/actions/events'
 import { canCreateEventsAction } from '@/app/actions/fraternity'
-import EventForm from '@/components/EventForm'
 import EventIllustrationUpload from '@/components/EventIllustrationUpload'
-import FraternityRequiredModal from '@/components/FraternityRequiredModal'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import { XMarkIcon as XIcon } from '@heroicons/react/24/outline'
 import { CheckIcon } from '@heroicons/react/24/outline'
+
+// Dynamically import large form components - only used on this page
+const EventForm = dynamic(() => import('@/components/EventForm'), {
+  loading: () => (
+    <Card className="p-8 text-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-ui border-t-transparent mx-auto mb-2"></div>
+      <p className="text-gray-medium">Loading form...</p>
+    </Card>
+  )
+})
+
+const FraternityRequiredModal = dynamic(() => import('@/components/FraternityRequiredModal'), {
+  ssr: false
+})
 
 function CreateEventPageContent() {
   const router = useRouter()

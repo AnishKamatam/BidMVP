@@ -3,18 +3,18 @@
 
 'use client'
 
-import { useState } from 'react'
+import { memo, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useChat } from '@/contexts/ChatContext'
 import Button from '@/components/ui/Button'
 
-export default function ChatWithHostButton({ eventId, onSuccess }) {
+function ChatWithHostButton({ eventId, onSuccess }) {
   const router = useRouter()
   const { createConversationWithEventHost } = useChat()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  const handleClick = async () => {
+  const handleClick = useCallback(async () => {
     if (!eventId || loading) return
 
     setLoading(true)
@@ -38,7 +38,7 @@ export default function ChatWithHostButton({ eventId, onSuccess }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [eventId, createConversationWithEventHost, router, onSuccess])
 
   return (
     <div className="w-full">
@@ -57,4 +57,6 @@ export default function ChatWithHostButton({ eventId, onSuccess }) {
     </div>
   )
 }
+
+export default memo(ChatWithHostButton)
 

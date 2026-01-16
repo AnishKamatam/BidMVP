@@ -3,12 +3,17 @@
 
 'use client'
 
+import { memo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Avatar from '@/components/ui/Avatar'
 import Button from '@/components/ui/Button'
 
-export default function ConversationHeader({ conversation, otherUser, messageRequestStatus }) {
+function ConversationHeader({ conversation, otherUser, messageRequestStatus }) {
   const router = useRouter()
+
+  const handleBack = useCallback(() => {
+    router.push('/messages')
+  }, [router])
 
   if (!conversation && !otherUser) {
     return null
@@ -21,7 +26,7 @@ export default function ConversationHeader({ conversation, otherUser, messageReq
       {/* Back button */}
       <Button
         variant="text"
-        onClick={() => router.push('/messages')}
+        onClick={handleBack}
         className="p-2"
       >
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-6 h-6">
@@ -51,4 +56,6 @@ export default function ConversationHeader({ conversation, otherUser, messageReq
     </div>
   )
 }
+
+export default memo(ConversationHeader)
 

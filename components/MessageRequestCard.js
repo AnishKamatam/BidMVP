@@ -3,12 +3,13 @@
 
 'use client'
 
+import { memo, useCallback } from 'react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Avatar from '@/components/ui/Avatar'
 import { formatTimeAgo } from '@/lib/utils/timeFormatting'
 
-export default function MessageRequestCard({ request, onAccept, onDecline, loading = false }) {
+function MessageRequestCard({ request, onAccept, onDecline, loading = false }) {
   if (!request) {
     return null
   }
@@ -16,6 +17,14 @@ export default function MessageRequestCard({ request, onAccept, onDecline, loadi
   // Request can have requester info or conversation info
   const requester = request.requester || request.user
   const created_at = request.created_at
+
+  const handleAccept = useCallback(() => {
+    onAccept?.(request)
+  }, [onAccept, request])
+
+  const handleDecline = useCallback(() => {
+    onDecline?.(request)
+  }, [onDecline, request])
 
   if (!requester) {
     return null
@@ -52,7 +61,7 @@ export default function MessageRequestCard({ request, onAccept, onDecline, loadi
             <Button
               variant="primary"
               size="small"
-              onClick={() => onAccept && onAccept(request)}
+              onClick={handleAccept}
               disabled={loading}
             >
               Accept
@@ -60,7 +69,7 @@ export default function MessageRequestCard({ request, onAccept, onDecline, loadi
             <Button
               variant="secondary"
               size="small"
-              onClick={() => onDecline && onDecline(request)}
+              onClick={handleDecline}
               disabled={loading}
             >
               Decline
@@ -71,4 +80,6 @@ export default function MessageRequestCard({ request, onAccept, onDecline, loadi
     </Card>
   )
 }
+
+export default memo(MessageRequestCard)
 

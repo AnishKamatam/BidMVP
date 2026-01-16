@@ -4,6 +4,7 @@
 
 'use client'
 
+import { memo, useCallback } from 'react'
 import { useFriend } from '@/contexts/FriendContext'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
@@ -11,7 +12,7 @@ import Avatar from '@/components/ui/Avatar'
 import Badge from '@/components/ui/Badge'
 import { formatTimeAgo } from '@/lib/utils/timeFormatting'
 
-export default function PeopleYouMet({ 
+function PeopleYouMet({ 
   suggestions: propsSuggestions, // If provided, use props; otherwise use context
   onSendRequest: propsOnSendRequest, // If provided, use props; otherwise use context
   loading: propsLoading, // If provided, use props; otherwise use context
@@ -100,7 +101,7 @@ export default function PeopleYouMet({
             <Button
               variant="primary"
               size="small"
-              onClick={() => onSendRequest && onSendRequest(suggestion)}
+              onClick={() => onSendRequest?.(suggestion)}
               disabled={loading}
             >
               Send Request
@@ -111,4 +112,6 @@ export default function PeopleYouMet({
     </div>
   )
 }
+
+export default memo(PeopleYouMet)
 

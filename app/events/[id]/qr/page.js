@@ -7,7 +7,6 @@ import { getEventAction } from '@/app/actions/events'
 import { isUserCheckedInAction } from '@/app/actions/checkin'
 import { geocodeAddressAction } from '@/app/actions/geocoding'
 import { checkUserApprovedForEventAction } from '@/app/actions/guests'
-import QRCode from 'qrcode'
 import GeolocationTrackerWrapper from '@/components/GeolocationTrackerWrapper'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
@@ -144,17 +143,27 @@ export default function QRDisplayPage() {
         // Generate QR code string
         const qrCodeString = `user-${user.id}-${eventId}`
         
-        // Convert to QR code image
-        QRCode.toDataURL(qrCodeString, {
-          width: 300,
-          margin: 2,
-          color: {
-            dark: '#000000',
-            light: '#FFFFFF'
-          }
-        })
-          .then(url => setQrCodeDataUrl(url))
-          .catch(err => console.error('Error generating QR code:', err))
+        // Dynamically import QRCode library only when needed (heavy dependency)
+        try {
+          const QRCode = (await import('qrcode')).default
+          // Convert to QR code image
+          QRCode.toDataURL(qrCodeString, {
+            width: 300,
+            margin: 2,
+            color: {
+              dark: '#000000',
+              light: '#FFFFFF'
+            }
+          })
+            .then(url => setQrCodeDataUrl(url))
+            .catch(err => {
+              console.error('Error generating QR code:', err)
+              setApprovalError('Failed to generate QR code')
+            })
+        } catch (importError) {
+          console.error('Error importing QRCode library:', importError)
+          setApprovalError('Failed to load QR code generator')
+        }
         
         // Check if user is already checked in
         checkCheckInStatus()

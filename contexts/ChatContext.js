@@ -49,7 +49,7 @@ export function ChatProvider({ children }) {
   const [unreadCount, setUnreadCount] = useState(0) // Total unread messages
   const [messageRequests, setMessageRequests] = useState([]) // Pending message requests
   const [activeConversation, setActiveConversation] = useState(null) // Currently open conversation ID
-  const [loading, setLoading] = useState(true) // Initial loading state
+  const [loading, setLoading] = useState(false) // Initial loading state - start as false to not block navigation
   const [error, setError] = useState(null) // Error message
 
   // Refs to track subscriptions
@@ -511,6 +511,10 @@ export function ChatProvider({ children }) {
     }
 
     if (user?.id) {
+      // Load unread count first (needed for nav badge) - don't block on conversations
+      refreshUnreadCount()
+      
+      // Load conversations in background - set loading only for conversations fetch
       setLoading(true)
       setError(null)
 
@@ -522,11 +526,8 @@ export function ChatProvider({ children }) {
         }
       }, 8000)
 
-      // Load initial data
-      Promise.all([
-        fetchConversations(),
-        refreshUnreadCount()
-      ]).finally(() => {
+      // Load initial data - unread count already fetched above
+      fetchConversations().finally(() => {
         if (mounted) {
           setLoading(false)
           if (timeoutId) {

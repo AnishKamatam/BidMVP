@@ -6,11 +6,16 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { useAuth } from '@/contexts/AuthContext'
-import AuthModal from '@/components/AuthModal'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
 import { useRouter } from 'next/navigation'
+
+// Dynamically import AuthModal - only loaded when modal is opened
+const AuthModal = dynamic(() => import('@/components/AuthModal'), {
+  ssr: false
+})
 
 export default function Home() {
   // Local state to control the auth modal

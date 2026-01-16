@@ -6,9 +6,10 @@
 
 'use client'
 
+import { memo } from 'react'
 import Link from 'next/link'
 
-export default function BottomNavigation({ items, activePath }) {
+function BottomNavigation({ items, activePath }) {
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 h-14 bg-white border-t border-gray-border flex items-center justify-around z-50"
@@ -54,4 +55,6 @@ export default function BottomNavigation({ items, activePath }) {
     </nav>
   )
 }
+
+export default memo(BottomNavigation)
 

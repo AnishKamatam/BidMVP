@@ -9,7 +9,7 @@
 
 'use client'
 
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
 import { useAuth } from './AuthContext'
 import { getUserFraternitiesAction } from '@/app/actions/fraternity'
 
@@ -31,7 +31,7 @@ export const useFraternity = () => {
 export function FraternityProvider({ children }) {
   const { user, loading: authLoading } = useAuth()
   const [userFraternities, setUserFraternities] = useState([]) // Stores user's fraternities
-  const [loading, setLoading] = useState(true) // True until initial check completes
+  const [loading, setLoading] = useState(false) // True until initial check completes - start false to not block
   const [error, setError] = useState(null) // Error message
   const [selectedFraternity, setSelectedFraternity] = useState(null) // Currently selected fraternity ID
 
@@ -69,10 +69,10 @@ export function FraternityProvider({ children }) {
     await fetchUserFraternities()
   }, [fetchUserFraternities])
 
-  // Select a fraternity (for event creation, etc.)
-  const selectFraternity = (fraternityId) => {
+  // Select a fraternity (for event creation, etc.) - memoized
+  const selectFraternity = useCallback((fraternityId) => {
     setSelectedFraternity(fraternityId)
-  }
+  }, [])
 
   // Fetch fraternities when user changes (but wait for auth to finish loading)
   useEffect(() => {
@@ -154,8 +154,8 @@ export function FraternityProvider({ children }) {
   }, [user?.id, authLoading])
 
 
-  // Package everything we want to expose to consuming components
-  const value = {
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo(() => ({
     userFraternities,        // Array of user's fraternities
     loading,                 // Loading state for initial check
     error,                   // Error message
@@ -163,7 +163,15 @@ export function FraternityProvider({ children }) {
     fetchUserFraternities,   // Function to fetch fraternities
     refreshFraternities,     // Function to refresh fraternities
     selectFraternity,        // Function to select a fraternity
-  }
+  }), [
+    userFraternities,
+    loading,
+    error,
+    selectedFraternity,
+    fetchUserFraternities,
+    refreshFraternities,
+    selectFraternity
+  ])
 
   // Provide fraternity state and functions to all child components
   return <FraternityContext.Provider value={value}>{children}</FraternityContext.Provider>
